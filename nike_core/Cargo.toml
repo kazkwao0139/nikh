@@ -1,0 +1,33 @@
+[package]
+name = "nike_core"
+version = "0.1.0"
+edition = "2021"
+description = "니케 검색 엔진 — bge-m3 ONNX 임베딩 + int8 코사인 + 규칙 태그. 생성 0, 서버 0, 로그 0."
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "nike"
+path = "src/main.rs"
+
+[dependencies]
+ort = { version = "2.0.0-rc.10", features = ["download-binaries"] }
+tokenizers = { version = "0.21", default-features = false, features = ["onig"] }
+ndarray = "0.16"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+zstd = "0.13"
+pdf-extract = "0.7"
+memmap2 = "0.9"
+anyhow = "1"
+regex = "1"
+rayon = "1"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = ["Data_Pdf", "Media_Ocr", "Graphics_Imaging", "Storage_Streams", "Foundation", "Foundation_Collections", "Globalization"] }

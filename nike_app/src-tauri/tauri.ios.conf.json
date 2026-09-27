@@ -1,0 +1,1 @@
+{ "bundle": { "resources": { "../../data/onnx/bge-m3/model_int8.onnx": "onnx/bge-m3/model_int8.onnx", "../../data/onnx/bge-m3/tokenizer.json": "onnx/bge-m3/tokenizer.json" } } }

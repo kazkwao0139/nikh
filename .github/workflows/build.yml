@@ -1,0 +1,27 @@
+name: build
+on: { push: { branches: [main] }, workflow_dispatch: {} }
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: "nike_app/src-tauri -> target" }
+      - name: fetch model (embedded in bundle)
+        shell: bash
+        run: |
+          mkdir -p data/onnx/bge-m3
+          curl -sL -o data/onnx/bge-m3/model_int8.onnx https://nike-data.hrmk.studio/onnx/bge-m3/model_int8.onnx
+          curl -sL -o data/onnx/bge-m3/tokenizer.json https://nike-data.hrmk.studio/onnx/bge-m3/tokenizer.json
+          ls -la data/onnx/bge-m3
+      - uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: nike_app/src-tauri
+          args: --bundles nsis
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nike-windows
+          path: |
+            nike_app/src-tauri/target/release/bundle/nsis/*.exe
+            nike_app/src-tauri/target/release/nike_app.exe

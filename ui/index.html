@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NIKH</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{--ink:#111;--mid:#666;--faint:#aaa;--line:#e6e6e6;--hi:#fff3b0;--acc:#111}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:#fff;color:var(--ink);font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;word-break:keep-all}
+.home{min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:clamp(28px,9vh,96px) 20px 120px;transition:padding .25s}
+.home.up{padding-top:28px;padding-bottom:0}
+.logo{font-size:52px;font-weight:800;letter-spacing:.3em;margin:0 0 28px;color:var(--ink);cursor:pointer;user-select:none}
+.home.up .logo{font-size:22px;margin:0 0 14px;letter-spacing:.25em}
+.country{position:fixed;inset:0;background:#fff;z-index:40;display:flex;align-items:center;justify-content:center}.country[hidden]{display:none}.cbox{text-align:center}.ct{font-size:28px;font-weight:700;margin:0 0 28px;letter-spacing:-.01em}.cards{display:flex;gap:18px;justify-content:center}.card{width:220px;padding:26px 18px;border:1px solid var(--line);border-radius:18px;cursor:pointer;background:#fff;transition:transform .12s,border-color .12s}.card:hover{transform:translateY(-2px);border-color:#111}.card .flag{font-size:44px;line-height:1;margin:0 0 12px}.card .nm{font-size:18px;font-weight:700}.card .sub{font-size:12px;color:var(--mid);margin:6px 0 0}.csub{font-size:12px;color:var(--faint);margin:22px 0 0}
+.usel{width:min(720px,100%);margin:0 0 14px;text-align:center}.usel .ttl{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:4px 0 12px}.usel .states{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}.usel .st{font-size:14px;padding:8px 18px;border-radius:20px;border:1px solid var(--line);cursor:pointer;color:var(--mid);background:#fff}.usel .st.on{background:#111;color:#fff;border-color:#111}.usel .st.dim{opacity:.35;cursor:default;background:#fff!important;color:var(--mid)!important;border-color:var(--line)!important}.usel .fed{margin:0 0 10px}.usel .sg{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-width:640px;margin:0 auto}.usel .sg .st{font-size:12px;font-weight:700;padding:6px 0;width:44px;border-radius:9px;letter-spacing:.02em}.usel .sel{font-size:13px;color:var(--mid);margin:10px 0 4px;min-height:18px}.usel .eras{display:flex;gap:6px;justify-content:center;margin:12px 0 0;flex-wrap:wrap}.usel .er{font-size:12px;padding:3px 11px;border-radius:12px;border:1px solid var(--line);cursor:pointer;color:var(--mid)}.usel .er.on{background:#111;color:#fff;border-color:#111}
+.home.up .usel .ttl{display:none}.home.up .usel{margin:0 0 10px}
+.lang{position:absolute;top:14px;right:18px;display:flex;gap:2px;border:1px solid var(--line);border-radius:14px;padding:2px}.lang .l{font-size:11px;padding:3px 10px;border-radius:12px;cursor:pointer;color:var(--mid)}.lang .l.on{background:#111;color:#fff}
+.modes{display:flex;gap:4px;margin:0 0 18px;border:1px solid var(--line);border-radius:20px;padding:3px}.modes .m{font-size:13px;padding:5px 16px;border-radius:16px;cursor:pointer;color:var(--mid)}.modes .m.on{background:#111;color:#fff}
+.scope{display:flex;flex-wrap:nowrap;gap:6px;justify-content:center;margin:0 0 14px;max-width:min(880px,100%);overflow-x:auto}.scope .c{font-size:12px;padding:3px 11px;border-radius:12px;border:1px solid var(--line);color:var(--mid);cursor:pointer;background:#fff}.scope .c.on{background:#111;color:#fff;border-color:#111}.scope .c.all{font-weight:600}
+.home.up .scope{margin:0 0 10px}.home.up .scope .c{font-size:11px;padding:2px 9px}
+.home.up .modes{margin:0 0 12px}.home.up .modes .m{font-size:12px;padding:3px 12px}
+.chip.m{background:#f5f5f5;border-style:dashed;color:var(--mid)}.hit{font-size:13px;color:var(--mid);margin:6px 0 0;padding:6px 10px;border-left:2px solid var(--line);white-space:pre-wrap}.hit .lbl{font-size:11px;color:var(--faint);margin-right:6px}
+.row .links{font-size:12px;margin:6px 0 0}.row .links a{color:var(--mid);margin-right:12px}
+.box{width:min(720px,100%);position:relative}
+textarea{width:100%;font:inherit;font-size:17px;line-height:1.6;padding:16px 56px 16px 52px;border:1px solid var(--line);border-radius:28px;resize:none;outline:none;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.06);min-height:58px;max-height:200px}
+textarea:focus{box-shadow:0 2px 12px rgba(0,0,0,.10);border-color:#ccc}
+textarea::placeholder{color:var(--faint)}
+.plus{position:absolute;left:10px;top:10px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--mid);cursor:pointer;font-size:22px;line-height:1;z-index:2}.plus:hover{border-color:#111;color:#111}
+.pdfnote{width:min(720px,100%);font-size:12px;color:var(--mid);margin:8px 0 0 20px}.pdfnote b{color:var(--ink)}
+.go{position:absolute;right:10px;top:10px;width:38px;height:38px;border-radius:50%;border:0;background:var(--acc);color:#fff;cursor:pointer;font-size:16px}
+.ex{width:min(720px,100%);color:var(--faint);font-size:13px;margin:12px 0 0 20px}.ex b{color:var(--mid);font-weight:500}.ex span{cursor:pointer;text-decoration:underline dotted}
+.home.up .ex,.home.up .tip{display:none}
+.tip{width:min(720px,100%);font-size:13px;color:var(--mid);margin:14px 0 0 20px;line-height:1.6}.tip b{font-weight:600;color:var(--ink)}.tip .bad{color:var(--faint);text-decoration:line-through}.tip .good{color:var(--ink)}.tip .arr{color:var(--faint);margin:0 6px}
+.opts{width:min(720px,100%);font-size:12px;color:var(--faint);margin:10px 0 0 20px;display:flex;gap:14px;align-items:center}.opts label{cursor:pointer;color:var(--mid)}.opts input{accent-color:#111;margin-right:3px}
+.facets{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;align-items:center}.facets .f{font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--mid)}.facets .f.on{background:#111;color:#fff;border-color:#111}.facets .lbl{font-size:11px;color:var(--faint);margin-right:4px}
+.res{width:min(760px,100%);margin:26px auto 60px;padding:0 20px}
+.meta{font-size:12px;color:var(--faint);margin:0 0 14px}
+.row{border-top:1px solid var(--line);padding:18px 0}
+.row .h{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.chip{font-size:11px;padding:2px 9px;border-radius:12px;border:1px solid var(--line);color:var(--mid);background:#fafafa}
+.chip.k{border-color:#111;color:#111;background:#fff}.chip.w{background:#eef7ee;border-color:#cfe6cf;color:#2a6a2a}.chip.l{background:#fdeeee;border-color:#f0caca;color:#8a2a2a}.chip.r{background:#f3efff;border-color:#dcd2f5;color:#4a2f8a}
+.title{font-size:14px;color:var(--mid);margin:0 0 4px}.title b{color:var(--ink);font-weight:600}
+.issue{font-size:15px;margin:0;white-space:pre-wrap}
+mark{background:var(--hi);color:inherit;padding:0 1px}
+.reader{position:fixed;inset:0;background:#fff;z-index:20;display:none;flex-direction:column}
+.reader.on{display:flex}
+.rbar{display:flex;align-items:center;gap:14px;padding:10px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--mid)}
+.rbar b{color:var(--ink)}
+.lineage{padding:8px 20px;border-bottom:1px solid var(--line);font-size:12px;color:var(--mid);display:flex;gap:8px;align-items:center;flex-wrap:wrap}.lineage .n{padding:3px 10px;border:1px solid var(--line);border-radius:12px;background:#fafafa}.lineage .n.in{border-color:#111;color:#111;background:#fff}.lineage .n.miss{color:var(--faint);border-style:dashed}.lineage .n a{color:var(--mid)}.lineage .arr{color:var(--faint)}.rbar .x{margin-left:auto;cursor:pointer;font-size:20px;color:var(--mid);background:none;border:0}.rbar .nav{cursor:pointer;background:none;border:1px solid var(--line);border-radius:8px;padding:3px 10px;font:inherit;color:var(--mid)}
+.cols{flex:1;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;overflow:hidden}
+.col{overflow-y:auto;padding:22px 26px;border-right:1px solid var(--line);font-size:14px;color:#222}.col:last-child{border-right:0}
+.col .ch{position:sticky;top:-22px;background:#fff;padding:6px 0 10px;border-bottom:1px solid var(--line);margin:0 0 12px}
+.col .ch .lv{font-size:12px;letter-spacing:.2em;color:var(--faint)}.col .ch .t{font-size:15px;font-weight:600}
+.col h4{font-size:12px;margin:18px 0 4px;color:var(--mid);font-weight:600;letter-spacing:.08em}
+.col pre{white-space:pre-wrap;font:inherit;margin:0;line-height:1.75}
+.col a{color:var(--mid);font-size:12px}.miss{font-size:12px;color:var(--faint)}
+@media(max-width:900px){.cols{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}.col{flex:0 0 100%;scroll-snap-align:start;border-right:0}.swdots{display:flex;gap:6px;justify-content:center;padding:6px 0;font-size:11px;color:var(--faint)}.swdots i{width:7px;height:7px;border-radius:50%;background:var(--line);display:inline-block}.swdots i.on{background:#111}}.swdots{display:none}@media(max-width:900px){.swdots{display:flex}}
+.empty{color:var(--faint);text-align:center;padding:40px 0}
+footer{position:fixed;bottom:0;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;font-size:11px;color:var(--faint);padding:8px;background:linear-gradient(transparent,#fff 40%)}
+.band{font-size:13px;color:var(--mid)}
+.pkbody{flex:1;overflow-y:auto;padding:22px 26px}.pkwrap{max-width:1040px;margin:0 auto}.pkcols{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}@media(max-width:820px){.pkcols{grid-template-columns:1fr}}.pkcols .pkcard{margin:16px 0 0}
+.sbar{width:min(720px,100%);height:3px;margin:6px 0 0;border-radius:2px;background:var(--line);overflow:hidden}.sbar[hidden]{display:none}.sbar i{display:block;height:100%;width:28%;background:#111;border-radius:2px;animation:sb 1.1s ease-in-out infinite}@keyframes sb{0%{transform:translateX(-110%)}100%{transform:translateX(380%)}}.pkfoot{display:flex;gap:16px;align-items:center;padding:12px 26px;border-top:1px solid var(--line);background:#fff}
+.pkintro{font-size:14px;line-height:1.7;padding:14px 18px;border-radius:14px;background:#fafafa;border:1px solid var(--line);margin:0 0 14px}
+.usgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:6px;margin:10px 0;min-width:0}.usgrid label{display:flex;align-items:center;gap:6px;font-size:12px;padding:6px 8px;min-width:0;overflow:hidden}.usgrid label span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.usgrid label{border:1px solid var(--line);border-radius:10px;cursor:pointer;color:var(--ink)}.usgrid label.na{opacity:.35;cursor:default}.usgrid input{accent-color:#111}.usgrid .cd{font-weight:700;width:22px;color:var(--mid)}.usrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:8px 0}.usrow label{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}.usrow input{accent-color:#111}.usrow .lbl{font-size:12px;color:var(--faint);width:70px}
+.pkcard{border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin:16px 0;background:#fff}
+.pkcard .hd{display:flex;align-items:center;gap:12px;margin:0 0 8px}.pkcard .hd b{font-size:15px}.pkcard .hd .ops{margin-left:auto;font-size:12px}.pkcard .hd .ops a{color:var(--mid);margin-left:10px}
+.pkrow{display:grid;grid-template-columns:22px 1fr auto 78px;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:14px;cursor:pointer}.pkrow:hover{background:#fafafa}
+.pkrow .bar{height:6px;border-radius:3px;background:#f0f0f0;overflow:hidden}.pkrow .bar i{display:block;height:100%;background:#111;opacity:.75}
+.pkrow .sz{font-size:12px;color:var(--mid);text-align:right}.pkrow .st{font-size:11px;text-align:center;padding:2px 8px;border-radius:10px;border:1px solid var(--line);color:var(--mid)}.pkrow .st.ok{background:#eef7ee;border-color:#cfe6cf;color:#2a6a2a}.pkrow .st.up{background:#fff4e5;border-color:#f0d9b5;color:#8a5a00}.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:60;display:flex;align-items:center;justify-content:center;padding:20px}.modal[hidden]{display:none}.mbox{background:#fff;border-radius:16px;padding:22px 24px;max-width:420px;width:100%;font-size:14px;line-height:1.6}.mbox b{font-size:16px;display:block;margin:0 0 8px}.mbox p{margin:0 0 16px;color:var(--mid)}.mbtns{display:flex;gap:10px;justify-content:flex-end}.pktabs{display:flex;gap:2px;border:1px solid var(--line);border-radius:14px;padding:2px}.pkt{font-size:12px;padding:3px 10px;border-radius:12px;cursor:pointer;color:var(--mid)}.pkt.on{background:#111;color:#fff}.instrow{display:grid;grid-template-columns:1fr auto 70px 18px;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:14px}.instrow .on{font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid #cfe6cf;background:#eef7ee;color:#2a6a2a;text-align:center}.instrow .off{font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid var(--line);color:var(--faint);text-align:center}.pkdel{color:var(--faint);text-decoration:none;font-size:13px;text-align:center}.pkdel:hover{color:#b00}.usdl{margin:10px 0 0;font-size:12px;color:var(--mid);display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}.usdl a{color:var(--faint);text-decoration:none}.usdl a:hover{color:#b00}
+.pkrow input{accent-color:#111;width:16px;height:16px}.btn{font:inherit;font-size:13px;padding:8px 16px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer}.btn-p{background:#111;color:#fff;border-color:#111}.nav2{display:flex;margin:14px 0}
+@media(max-width:600px){.usel .ttl{font-size:18px}.usel .sg .st{width:38px;font-size:11px;padding:5px 0}.ex,.tip{margin-left:0}.home{padding-left:12px;padding-right:12px}.logo{font-size:34px}textarea{font-size:16px}}
+</style></head><body>
+<div class="home" id="home">
+  <div class="logo" id="logo" title="처음으로">ΝΙΚΗ</div>
+  <div class="lang" id="lang"><span class="l on" data-l="ko">대한민국</span><span class="l" data-l="en">United States</span></div>
+  <div class="modes" id="modes"><span class="m on" data-m="case">판례 · 해석례 · 심판</span><span class="m" data-m="patent">특허</span></div>
+  <div class="scope" id="scope"></div>
+  <div class="usel" id="usel" hidden><div class="ttl">Select your State.</div><div class="states fed" id="usfed"></div><div class="sg" id="ustates"></div><div class="sel" id="ussel"></div><div class="eras" id="useras"></div></div>
+  <div class="box"><button class="plus" id="plus" title="PDF 넣기 — 소장·공소장·준비서면은 청구원인·공소사실만, 특허 명세서는 요약·청구범위만 골라 검색창에 옮깁니다 (파일은 저장되지 않음)">+</button><input type="file" id="pdfin" accept="application/pdf,.pdf" hidden><textarea id="q" rows="1" placeholder="자연스럽게 의뢰인의 현 상황을 입력해 주세요"></textarea><button class="go" id="go" aria-label="검색">→</button></div>
+  <div class="sbar" id="sbar" hidden><i></i></div>
+  <div class="pdfnote" id="pdfnote" hidden></div>
+  <div class="opts"><span id="opts_k">결과</span><label><input type="radio" name="k" value="10"> 10</label><label><input type="radio" name="k" value="50" checked> 50</label><label><input type="radio" name="k" value="100"> 100</label><span style="margin-left:10px"><label><input type="checkbox" id="hyb"> <span id="hybl">조문·용어 정확일치 우선</span></label></span></div>
+<div class="ex" id="exPat" hidden><b>예시:</b> <span>스마트폰 카메라로 손떨림을 보정할 때 자이로 센서 값과 영상 움직임 벡터를 합쳐 렌즈를 움직이는 방법</span> · <span>배달 주문이 몰리는 시간대를 예측해 라이더에게 미리 배차하는 시스템</span></div>
+<div class="tip" id="tipCase"><b>팁</b> 사실관계를 최대한 구체적으로 입력할수록 구체적인 판례가 뜰 확률이 올라갑니다.<br><b>＋</b> 소장·공소장·답변서·준비서면 PDF를 넣으면 <b>청구원인·공소사실</b> 부분만 골라내 그대로 검색합니다(텍스트본 PDF, 파일 저장 없음).<br><span class="bad">임대차 보증금 분쟁</span><span class="arr">→</span><span class="good">상가 임차인이 계약 만료 후 원상복구까지 했는데 임대인이 인테리어 철거비를 추가로 공제하고 보증금 일부만 돌려줬다</span></div>
+<div class="tip" id="tipPat" hidden><b>팁</b> 무엇을(대상)·어떻게(수단)·왜(효과)를 풀어 쓸수록 가까운 선행기술이 뜹니다.<br><b>＋</b> 명세서·공보 PDF를 넣으면 <b>요약·청구범위</b> 부분만 골라내 선행기술을 찾습니다.<br><span class="bad">카메라 손떨림 보정</span><span class="arr">→</span><span class="good">자이로 센서 값과 영상 움직임 벡터를 합쳐 렌즈를 움직여 손떨림을 보정하는 스마트폰 카메라 방법</span></div>
+<div class="tip" id="tipUs" hidden><b>Tip</b> The more concrete the facts (who, when, what, where), the closer the cases.<br><b>＋</b> Drop in a complaint, indictment or brief (PDF) and only the statement of facts is extracted and searched — the file is never stored.<br><span class="bad">car accident</span><span class="arr">→</span><span class="good">Client was rear-ended at a red light; the other driver's insurer denies liability, claiming she stopped suddenly, and her ER visit and physical therapy total $18,000</span></div>
+<div class="ex" id="exUs" hidden><b>Examples:</b> <span>Employee was fired two weeks after filing a workers' compensation claim; employer says it was a routine layoff</span> · <span>Police searched the trunk during a traffic stop after saying they smelled marijuana, without a warrant or consent</span> · <span>HOA fined a homeowner $50 a day for a fence, but the covenant was never recorded against the lot</span></div>
+<div class="ex" id="exCase"><b>예시:</b> <span>임차인이 보증금을 돌려받기 전에 집을 비웠는데 임대인이 원상복구 비용을 공제하고 일부만 돌려줬다</span> · <span>회사 대표가 자금난으로 직원 퇴직금과 두 달 임금을 8개월째 못 주고 있다가 고소당했다</span></div>
+</div>
+<div class="res" id="res"></div>
+<div class="country" id="country" hidden><div class="cbox"><div class="ct">Select your Country.</div><div class="cards"><div class="card" data-c="ko"><div class="flag">🇰🇷</div><div class="nm">대한민국</div><div class="sub">판례 · 해석례 · 심판 · 특허</div></div><div class="card" data-c="en"><div class="flag">🇺🇸</div><div class="nm">United States</div><div class="sub">Supreme Court · State courts</div></div></div><div class="csub">You can switch anytime from the top-right corner.</div></div></div>
+<div class="modal" id="cellwarn" hidden><div class="mbox"><b id="cwTitle">셀룰러 요금 주의</b><p id="cwText"></p><div class="mbtns"><button class="btn" id="cwNo">취소</button><button class="btn btn-p" id="cwYes">계속 받기</button></div></div></div>
+<div class="reader" id="packs" style="z-index:30"><div class="rbar"><b>데이터 팩</b><span id="pkinfo" style="margin-left:10px"></span><span class="pktabs" style="margin-left:14px"><span class="pkt on" data-t="sel">팩 선택</span><span class="pkt" data-t="inst">설치된 팩</span></span><button class="btn btn-p" id="pkapply" style="margin-left:18px;padding:6px 14px">선택한 팩 내려받기 · 적용</button><span class="band" id="pksum" style="margin-left:10px"></span><span class="band" id="pkstatus" style="margin-left:10px"></span><span id="pkgauge" style="display:none;width:180px;height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-left:8px"><span id="pkgaugeFill" style="display:block;height:100%;width:0;background:#111;transition:width .25s"></span></span><button class="nav" id="pkcheck" style="margin-left:auto">업데이트 확인</button><span id="pkupd" style="font-size:12px;color:var(--mid);margin-left:8px"></span><button class="x" id="pkclose">×</button></div>
+  <div class="pkbody"><div class="pkwrap"><div id="pkintro" class="pkintro" hidden><b>필요한 것만 받으세요.</b> 처음 설치라면 자주 다루는 분야 두세 개면 충분합니다(분야 팩 하나가 수십~수백 MB). 특허는 IPC 섹션별로 0.1~2.3GB라 필요한 섹션만. 언제든 추가·삭제할 수 있고, 받은 팩은 이 컴퓨터 안에서만 검색됩니다.</div>
+  <p class="band" id="pkhint" style="margin:0 0 6px">체크한 팩만 내려받아 엔진에 싣습니다. 해제하면 메모리에서 내립니다. 검색 범위는 검색창 아래 칩으로 그때그때 고르면 됩니다.</p>
+  <div id="pklist"></div></div></div>
+  </div>
+<div class="reader" id="reader"><div class="rbar"><button class="nav" id="rprev">← 이전</button><span id="rtitle"></span><button class="nav" id="rnext">다음 →</button><button class="nav" id="rcopy" title="본문을 드래그해 두면 그 문장과 출처를 함께 복사합니다">인용 복사</button><span id="rcopied" style="font-size:12px;color:var(--faint)"></span><button class="x" id="rclose" aria-label="닫기">×</button></div><div class="lineage" id="lineage"></div><div class="cols" id="cols"></div></div>
+<footer><span id="ready" style="font-size:11px;color:var(--faint)"></span><span id="gauge" style="display:none;width:220px;height:4px;border-radius:2px;background:var(--line);overflow:hidden"><span id="gaugeFill" style="display:block;height:100%;width:0;background:#111;transition:width .3s"></span></span><span id="pkopen" style="cursor:pointer;display:none;margin-bottom:6px;padding:3px 10px;border:1px solid var(--line);border-radius:12px;color:var(--ink)">데이터 팩 선택</span><span id="upd" style="cursor:pointer;display:none;margin:0 0 6px 8px;padding:3px 10px;border:1px solid #111;border-radius:12px;background:#111;color:#fff"></span><span id="footnote">결과는 판례 원문·메타·규칙 태그만 표시합니다. 요약·생성 없음 · 입력은 저장되지 않습니다</span><span id="joke" style="display:block;margin-top:6px;font-size:11px;color:var(--faint)"></span></footer>
+<script>
+const $=s=>document.querySelector(s); const q=$('#q'), home=$('#home'), res=$('#res');
+const IS_TAURI=!!(window.__TAURI__&&window.__TAURI__.core); const IS_MOBILE=/iPad|iPhone|Android/.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.userAgent)); const inv=(c,a)=>window.__TAURI__.core.invoke(c,a||{});
+q.addEventListener('input',()=>{q.style.height='auto';q.style.height=Math.min(q.scrollHeight,200)+'px';});
+q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();run();}});
+// ── 모드: 판례(특허 제외) / 특허(특허 공보만). 같은 엔진, 팩만 다름 ──
+const PACKS=[['civil','민사'],['criminal','형사'],['admin','행정'],['family','가사'],['tax','세법'],['constitution','헌법(헌재)'],['interpretation','법령해석례'],['appeal','행정심판·위원회'],['treaty','조약'],['patent','특허법원 판례']];
+const PATS=[['pat_A','A 생활필수품'],['pat_B','B 처리·운수'],['pat_C','C 화학·야금'],['pat_D','D 섬유·지류'],['pat_E','E 건축·광업'],['pat_F','F 기계·조명·무기'],['pat_G','G 물리학'],['pat_H','H 전기'],['pat_X','X 분류없음']];
+const CHIP={pat_A:'A 생활',pat_B:'B 운수',pat_C:'C 화학',pat_D:'D 섬유',pat_E:'E 건축',pat_F:'F 기계',pat_G:'G 물리',pat_H:'H 전기',pat_X:'X 미분류',patent:'특허법원',appeal:'행정심판',constitution:'헌재',interpretation:'해석례'};   // 칩용 짧은 이름(한 줄 유지), 전체 이름은 툴팁
+const PLABEL=Object.fromEntries([...PACKS,...PATS]);
+let LOADED=null;   // Tauri: 엔진에 실린 팩 키 목록 (null이면 웹 = 전부)
+let SCOPE={case:new Set(),patent:new Set(),us:new Set()}; let US_STATE=null; let US_ERAS=new Set(); let US_SCOTUS=true; let US_ALLCIRC=false; let US_PATENT=false;   // All circuits: 13개 순회 항소법원 전부 / Patent courts: CAFC·CCPA + 특허 소송 집중 지구(E.D./W.D. Tex., D. Del., N.D. Cal.)
+const PATENT_COURTS=['us_scotus','us_fed_cafc','us_fed_other','us_fedd_tx','us_fedd_de','us_fedd_ca'];
+const CIRC={me:1,ma:1,nh:1,ri:1,ct:2,ny:2,vt:2,de:3,nj:3,pa:3,md:4,nc:4,sc:4,va:4,wv:4,la:5,ms:5,tx:5,ky:6,mi:6,oh:6,tn:6,il:7,in:7,wi:7,ar:8,ia:8,mn:8,mo:8,ne:8,nd:8,sd:8,ak:9,az:9,ca:9,hi:9,id:9,mt:9,nv:9,or:9,wa:9,co:10,ks:10,nm:10,ok:10,ut:10,wy:10,al:11,fl:11,ga:11,dc:'dc'};   // 연방 항소 순회구
+const fedKeys=st=>{ const s=(st||'').replace(/^us_/,''); const c=CIRC[s]; return c?['us_fed_ca'+c,'us_fedd_'+s]:[]; };   // 그 주의 순회 항소법원 + 연방지방·파산법원 팩   // 연방대법원은 기본 포함(끌 수 있음)   // 검색 범위 칩 (비어 있으면 전체)
+function drawUS(){ $('#usel').hidden=false; $('#scope').innerHTML='';
+  const has=k=>!LOADED||LOADED.some(x=>x.startsWith(k+'_')); const name=k=>k==='us_scotus'?'U.S. Supreme Court':((STATES.find(([c])=>'us_'+c===k)||[])[1]||k);
+  if(US_STATE&&!has(US_STATE)){ US_STATE=null; US_ERAS.clear(); }   // 메모리에서 내린 주는 선택 해제
+  if(US_PATENT&&!has('us_fed_cafc')) US_PATENT=false;
+  const fedOk=has('us_scotus'); $('#usfed').innerHTML=`<span class="st ${US_SCOTUS&&fedOk?'on':''} ${fedOk?'':'dim'}" id="usfedchip" title="${fedOk?'Supreme Court + your state’s circuit court of appeals + federal district courts — click to exclude':'pack not installed'}">${US_SCOTUS&&fedOk?'✓ ':''}Federal courts</span><span class="st ${US_PATENT?'on':''} ${has('us_fed_cafc')?'':'dim'}" id="uspatent" title="Federal Circuit · CCPA · E.D./W.D. Tex. · D. Del. · N.D. Cal. — patent litigation venues (state selection not needed)">${US_PATENT?'✓ ':''}Patent courts</span>${US_SCOTUS&&fedOk&&!US_PATENT?`<span class="st ${US_ALLCIRC?'on':''}" id="usallcirc" title="Add every circuit court of appeals (circuit splits, persuasive authority)">${US_ALLCIRC?'✓ ':''}All circuits</span>`:''}`;
+  $('#ustates').innerHTML=STATES.map(([c,n])=>`<span class="st ${US_STATE==='us_'+c?'on':''} ${has('us_'+c)?'':'dim'}" data-k="us_${c}" title="${esc(n)}${has('us_'+c)?'':' · pack not installed'}">${c.toUpperCase()}</span>`).join('');
+  const fed=US_SCOTUS&&fedOk; $('#ussel').textContent=US_PATENT?'Patent courts (Fed. Cir. · CCPA · E.D./W.D. Tex. · D. Del. · N.D. Cal. · SCOTUS)'+(US_ERAS.size?' · '+[...US_ERAS].map(e=>(ERAS.find(([k])=>k===e)||[])[1]||e).join(' · '):' · all eras'):(US_STATE||fed)?[US_STATE?name(US_STATE):null,fed?(US_STATE&&CIRC[US_STATE.slice(3)]?`Federal (SCOTUS · Fed. Cir. · ${US_ALLCIRC?'all circuits · ':''}${CIRC[US_STATE.slice(3)]==='dc'?'D.C.':CIRC[US_STATE.slice(3)]+(({1:'st',2:'d',3:'d'})[CIRC[US_STATE.slice(3)]]||'th')} Cir. · D. ${US_STATE.slice(3).toUpperCase()})`:'U.S. Supreme Court'):null].filter(Boolean).join(' + ')+(US_ERAS.size?' · '+[...US_ERAS].map(e=>(ERAS.find(([k])=>k===e)||[])[1]||e).join(' · '):' · all eras'):'Pick your state. Grey = pack not installed (see Data packs below).';
+  $('#useras').innerHTML=(US_STATE||fed||US_PATENT)?ERAS.map(([e,el])=>`<span class="er ${US_ERAS.size===0||US_ERAS.has(e)?'on':''}" data-e="${e}">${esc(el)}</span>`).join(''):'';
+  const pc=$('#uspatent'); if(pc) pc.onclick=()=>{ if(pc.classList.contains('dim')) return; US_PATENT=!US_PATENT; syncUS(); drawUS(); if(IS_TAURI) inv('prewarm',{mode:'us'}).catch(()=>{}); if(q.value.trim()) run(); else q.focus(); };
+  const ac=$('#usallcirc'); if(ac) ac.onclick=()=>{ US_ALLCIRC=!US_ALLCIRC; syncUS(); drawUS(); if(IS_TAURI) inv('prewarm',{mode:'us'}).catch(()=>{}); if(q.value.trim()) run(); };
+  $('#usfedchip').onclick=()=>{ if(!fedOk) return; US_SCOTUS=!US_SCOTUS; syncUS(); drawUS(); if(IS_TAURI) inv('prewarm',{mode:'us'}).catch(()=>{}); if(q.value.trim()) run(); };
+  document.querySelectorAll('#ustates .st').forEach(c=>c.onclick=()=>{ if(c.classList.contains('dim')) return; US_STATE=US_STATE===c.dataset.k?null:c.dataset.k; US_ERAS.clear(); syncUS(); drawUS(); if(IS_TAURI) inv('prewarm',{mode:'us'}).catch(()=>{}); if(US_STATE&&q.value.trim()) run(); else q.focus(); });
+  document.querySelectorAll('#useras .er').forEach(c=>c.onclick=()=>{ const e=c.dataset.e; if(US_ERAS.has(e)) US_ERAS.delete(e); else US_ERAS.add(e); if(US_ERAS.size===ERAS.length) US_ERAS.clear(); syncUS(); drawUS(); if(q.value.trim()) run(); }); }
+function syncUS(){ SCOPE.us=new Set(); const fedOk=!LOADED||LOADED.some(x=>x.startsWith('us_scotus_')); const ks=US_PATENT?[...PATENT_COURTS]:[US_STATE]; if(!US_PATENT&&US_SCOTUS&&fedOk){ ks.push('us_scotus', 'us_fed_cafc', ...fedKeys(US_STATE)); if(US_ALLCIRC) for(const c of [1,2,3,4,5,6,7,8,9,10,11,'dc']) ks.push('us_fed_ca'+c); } for(const k of ks) if(k) for(const [e] of ERAS) if(US_ERAS.size===0||US_ERAS.has(e)) SCOPE.us.add(k+'_'+e); }
+function drawScope(){ if(MODE==='us'){ drawUS(); return; } $('#usel').hidden=true; const list=(MODE==='patent'?PATS:PACKS).filter(([k])=>!LOADED||LOADED.includes(k)); const sel=SCOPE[MODE]||(SCOPE[MODE]=new Set());
+  $('#scope').innerHTML=`<span class="c all ${sel.size?'':'on'}" data-k="">전체</span>`+list.map(([k,l])=>`<span class="c ${sel.has(k)?'on':''}" data-k="${k}" title="${esc(l)}">${esc(CHIP[k]||l)}</span>`).join('');
+  document.querySelectorAll('#scope .c').forEach(c=>c.onclick=()=>{ const k=c.dataset.k; if(!k) sel.clear(); else if(sel.has(k)) sel.delete(k); else sel.add(k); drawScope(); if(q.value.trim()) run(); }); }
+function modeParam(){ const sel=SCOPE[MODE]||new Set(); return sel.size?('packs:'+[...sel].join(',')):MODE; }
+let MODE='case'; const PH={case:'자연스럽게 의뢰인의 현 상황을 입력해 주세요',patent:'이런 발명이 이미 있는지 — 기술 내용을 자연스럽게 적어 주세요',us:'Describe your client\'s situation in plain English'};
+const USP=[['us_scotus','U.S. Supreme Court'],['us_de','Delaware'],['us_ca','California'],['us_tx','Texas'],['us_ny','New York']];
+const STATES=[['al','Alabama'],['ak','Alaska'],['az','Arizona'],['ar','Arkansas'],['ca','California'],['co','Colorado'],['ct','Connecticut'],['de','Delaware'],['dc','D.C.'],['fl','Florida'],['ga','Georgia'],['hi','Hawaii'],['id','Idaho'],['il','Illinois'],['in','Indiana'],['ia','Iowa'],['ks','Kansas'],['ky','Kentucky'],['la','Louisiana'],['me','Maine'],['md','Maryland'],['ma','Massachusetts'],['mi','Michigan'],['mn','Minnesota'],['ms','Mississippi'],['mo','Missouri'],['mt','Montana'],['ne','Nebraska'],['nv','Nevada'],['nh','New Hampshire'],['nj','New Jersey'],['nm','New Mexico'],['ny','New York'],['nc','North Carolina'],['nd','North Dakota'],['oh','Ohio'],['ok','Oklahoma'],['or','Oregon'],['pa','Pennsylvania'],['ri','Rhode Island'],['sc','South Carolina'],['sd','South Dakota'],['tn','Tennessee'],['tx','Texas'],['ut','Utah'],['vt','Vermont'],['va','Virginia'],['wa','Washington'],['wv','West Virginia'],['wi','Wisconsin'],['wy','Wyoming']];
+const ERAS=[['antique','Antique (–1937)'],['classics','Classics (1938–89)'],['modern','Modern (1990–2019)'],['contemporary','Contemporary (2020–)']];
+for(const [k,l] of USP) for(const [e,el] of ERAS) PLABEL[k+'_'+e]=l+' · '+el;
+for(const [c,n] of STATES) for(const [e,el] of ERAS) PLABEL['us_'+c+'_'+e]=n+' · '+el;   // ERAS 정의 뒤
+for(const [c,n] of STATES) for(const [e,el] of ERAS) PLABEL['us_fedd_'+c+'_'+e]='Federal district & bankruptcy · '+n+' · '+el;
+for(const c of [1,2,3,4,5,6,7,8,9,10,11,'dc','fc']) for(const [e,el] of ERAS) PLABEL['us_fed_ca'+c+'_'+e]='U.S. Court of Appeals · '+(c==='dc'?'D.C.':c==='fc'?'Fed.':c+(({1:'st',2:'d',3:'d'})[c]||'th'))+' Cir. · '+el;
+for(const [e,el] of ERAS) PLABEL['us_fed_other_'+e]='Other federal courts · '+el;
+const L=(ko,en)=>LANG==='en'?en:ko;   // 국가별 문구(전수 적용)
+let LANG='ko'; const T={ko:{modes:['판례 · 해석례 · 심판','특허'],go:'검색',foot:'결과는 판례 원문·메타·규칙 태그만 표시합니다. 요약·생성 없음 · 입력은 저장되지 않습니다',k:'결과',hyb:'조문·용어 정확일치 우선'},
+  en:{modes:['U.S. Cases',''],go:'Search',foot:'Results show original opinions, metadata and rule-based tags only. No summaries, nothing generated, nothing stored.',k:'Results',hyb:'Prefer exact statute/term match'}};
+function syncTips(){ const ko=LANG!=='en'; $('#exCase').hidden=!(ko&&MODE==='case'); $('#exPat').hidden=!(ko&&MODE==='patent'); $('#tipCase').hidden=!(ko&&MODE==='case'); $('#tipPat').hidden=!(ko&&MODE==='patent'); $('#tipUs').hidden=!(LANG==='en'&&MODE==='us'); $('#exUs').hidden=!(LANG==='en'&&MODE==='us'); }
+function applyLang(){ const t=T[LANG]; const ms=document.querySelectorAll('#modes .m'); ms[0].textContent=t.modes[0]; ms[1].textContent=t.modes[1]; ms[0].dataset.m=LANG==='en'?'us':'case'; ms[1].hidden=LANG==='en'; $('#modes').style.display=LANG==='en'?'none':'';
+  $('#opts_k').textContent=t.k; $('#hybl').textContent=t.hyb; $('#footnote').textContent=t.foot; syncTips();
+  $('#logo').title=L('처음으로','Home'); $('#plus').title=L('PDF 넣기 — 소장·공소장·준비서면은 청구원인·공소사실만, 특허 명세서는 요약·청구범위만 골라 검색창에 옮깁니다 (파일은 저장되지 않음)','Add a PDF — complaints, indictments and briefs: only the statement of facts / cause of action is extracted into the search box (the file is never stored)');
+  $('#packs .rbar b').textContent=L('데이터 팩','Data packs'); $('#pkhint').textContent=L('체크한 팩만 내려받아 엔진에 싣습니다. 해제하면 메모리에서 내립니다. 검색 범위는 검색창 아래 칩으로 그때그때 고르면 됩니다.','Only checked packs are downloaded and loaded into the engine; unchecking unloads them. Narrow a search any time with the chips under the search box.'); $('#pkapply').textContent=L('선택한 팩 내려받기 · 적용','Download selected · Apply');
+  $('#rprev').textContent=L('← 이전','← Prev'); $('#rnext').textContent=L('다음 →','Next →'); $('#rcopy').textContent=L('인용 복사','Copy citation'); $('#rcopy').title=L('본문을 드래그해 두면 그 문장과 출처를 함께 복사합니다','Select text in the opinion first to copy it together with its citation'); $('#pkopen').textContent=L('데이터 팩 선택','Data packs'); $('#pkcheck').textContent=L('업데이트 확인','Check for updates'); const pt=document.querySelectorAll('.pkt'); if(pt[0]) pt[0].textContent=L('팩 선택','Choose packs'); if(pt[1]) pt[1].textContent=L('설치된 팩','Installed'); $('#joke').textContent=L('“의뢰인 얘기를 그대로 넣어도 비밀유지특권 유지되냐고요?” 저희는 님들 의뢰인의 사생활과 범죄 내역에 관심이 없습니다 ㅇㅅㅇ 데이터 팩 받고 인터넷 꺼보세요. 돌아갑니다.','“Can I paste my client’s whole story in here and keep privilege?” We have zero interest in your client’s private life or rap sheet ㅇㅅㅇ Download the packs, turn off your Wi-Fi, and watch it still work.'); }
+function setLang(l){ LANG=l; document.querySelectorAll('#lang .l').forEach(x=>x.classList.toggle('on',x.dataset.l===l)); MODE=LANG==='en'?'us':'case'; document.querySelectorAll('#modes .m').forEach((x,i)=>x.classList.toggle('on',i===0)); applyLang(); q.placeholder=PH[MODE]; drawScope(); if(IS_TAURI) inv('prewarm',{mode:MODE}).catch(()=>{}); try{ localStorage.setItem('nike.country', l); }catch(e){} }
+(function(){ let c=null; try{ c=localStorage.getItem('nike.country'); }catch(e){} if(!c){ $('#country').hidden=false; document.querySelectorAll('#country .card').forEach(cd=>cd.onclick=()=>{ $('#country').hidden=true; setLang(cd.dataset.c); try{ localStorage.setItem('nike.country', cd.dataset.c); }catch(e){} if(window.__nopacks&&!window.__introShown){ window.__introShown=true; $('#pkintro').hidden=false; openPacks(); } else q.focus(); }); } else if(c==='en'){ setTimeout(()=>setLang('en'),0); } })();
+document.querySelectorAll('#lang .l').forEach(b=>b.onclick=()=>{ setLang(b.dataset.l); if(q.value.trim()) run(); });   // 한 경로(setLang)
+document.querySelectorAll('#modes .m').forEach(m=>m.onclick=()=>{MODE=m.dataset.m; if(IS_TAURI) inv('prewarm',{mode:MODE}).catch(()=>{});document.querySelectorAll('#modes .m').forEach(x=>x.classList.toggle('on',x===m));q.placeholder=PH[MODE];drawScope();syncTips();if(q.value.trim())run();else q.focus();});
+const openExt=u=>{ if(!u) return; if(IS_TAURI) inv('open_url',{url:u}).catch(e=>alert(String(e))); else window.open(u,'_blank','noopener'); };
+document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href^="http"]'); if(a&&IS_TAURI){ e.preventDefault(); openExt(a.href); } });
+$('#plus').onclick=()=>$('#pdfin').click();
+$('#pdfin').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; e.target.value=''; const note=$('#pdfnote'); note.hidden=false; note.textContent=L('PDF에서 텍스트를 읽는 중…','Reading text from the PDF…');
+  try{ if(!IS_TAURI) throw new Error(L('PDF 읽기는 앱에서만 됩니다','PDF import works only in the app')); const buf=new Uint8Array(await f.arrayBuffer()); if(buf.length>40e6) throw new Error(L('40MB 이하 PDF만','PDFs up to 40MB only'));
+    const r=await window.__TAURI__.core.invoke('pdf_facts',buf); q.value=r.text; q.dispatchEvent(new Event('input')); note.innerHTML=L(`<b>${esc(f.name)}</b>에서 <b>${esc(r.label)}</b> ${r.text.length.toLocaleString()}자를 옮겼습니다 · 필요하면 다듬은 뒤 검색 · 파일은 저장되지 않습니다`,`Moved <b>${esc(r.label)}</b> (${r.text.length.toLocaleString()} chars) from <b>${esc(f.name)}</b> · edit if needed, then search · the file is not stored`); run(); }
+  catch(err){ note.textContent=L('PDF 처리 실패: ','PDF failed: ')+String(err).replace(/^Error:\s*/,''); } };
+$('#go').onclick=run; $('#logo').onclick=()=>{q.value='';q.style.height='auto';res.innerHTML='';$('#pdfnote').hidden=true;home.classList.remove('up');closeReader();window.scrollTo({top:0});q.focus();}; document.querySelectorAll('.ex span').forEach(s=>s.onclick=()=>{q.value=s.textContent;q.dispatchEvent(new Event('input'));run();});
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function chip(t,cls){return `<span class="chip ${cls||''}">${esc(t)}</span>`}
+function resultCls(t){if(/승소|인용|파기/.test(t))return 'w';if(/패소|기각|각하|유죄/.test(t))return 'l';return ''}
+function hl(text,terms){return esc(text)}   // 형광펜(질의어 강조) 제거 — 사용자 결정 2026-09-27
+const US_OPTYPE={'010combined':'Opinion','015unamimous':'Unanimous opinion','020lead':'Lead opinion','025plurality':'Plurality opinion','030concurrence':'Concurrence','035concurrenceinpart':'Concurrence in part','040dissent':'Dissent','050addendum':'Addendum','060remittitur':'Remittitur','070rehearing':'Rehearing','080onthemerits':'On the merits','090onmotiontostrike':'On motion to strike','100trialcourt':'Trial court','majority':'Majority opinion','concurrence':'Concurrence','dissent':'Dissent','rehearing':'Rehearing','on-the-merits':'On the merits','unanimous':'Unanimous opinion','concurring-in-part-and-dissenting-in-part':'Concurring in part, dissenting in part'};
+function usPretty(t){ // CourtListener plain_text: 레이아웃 공백·들여쓰기·쪽머리 정리, 문장 중간 줄바꿈 병합(빈 줄=문단), 두 열 캡션·각주·줄끝 하이픈 처리
+  const raw=t.replace(/\r/g,'').split('\n'); const lines=raw.map(l=>l.replace(/[ \t]+/g,' ').trim()); const out=[]; let buf='';
+  const isHead=l=>/^(Page \d+ of \d+|C\.A\. No\. [\w.-]+|Case No\.? [\w:.-]+|No\. \d[\w.-]*|-\s*\d+\s*-|(January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4})$/.test(l);   // 쪽머리·쪽번호·날짜 줄
+  const isLayout=(r,l)=>/§/.test(l)||(r.trim().split(/ {6,}|\t/).length>=2&&l.length<90&&!/[.;,]$/.test(l));   // 6칸 이상 벌어진 두 열(양쪽 정렬 본문의 넓은 띄어쓰기는 제외)   // 두 열 캡션(당사자 § 사건번호)·오른쪽 정렬 라벨 → 줄 그대로
+  const flush=()=>{ if(buf){ out.push(buf); buf=''; } };
+  let pairs=0,single=0; for(let i=1;i<lines.length-1;i++){ if(lines[i]===''&&lines[i-1]&&lines[i+1]){ single++; } if(lines[i]&&lines[i-1]) pairs++; }
+  const dbl=single>pairs;   // 법원 문서 더블스페이스(줄마다 빈 줄) → 문장이 안 끝난 빈 줄은 문단 경계로 안 봄
+  let fn=false;   // 각주 문단 진행 중
+  for(let i=0;i<lines.length;i++){ const l=lines[i];
+    if(!l){ const nx=lines.slice(i+1).find(x=>x)||''; if(buf&&!fn&&!/[.:;!?”")\]]$/.test(buf)&&(dbl||/^[a-z]/.test(nx))) continue; flush(); fn=false; if(out.length&&out[out.length-1]!=='') out.push(''); continue; }   // 문장이 안 끝났고(더블스페이스 문서 또는 다음 줄이 소문자 시작) → 빈 줄 무시
+    if(isHead(l)) continue;
+    if(/^\d{1,2}$/.test(l)){ const nx=lines.slice(i+1).find(x=>x); if(nx&&!/^\d{1,2}$/.test(nx)){ flush(); buf='['+l+'] '; fn=true; continue; } continue; }   // 단독 숫자 줄 + 본문 = 각주 번호
+    if(/:$/.test(l)&&l.length<30){ flush(); out.push(l); out.push(''); continue; }   // 'Dear Counsel:' 같은 인사·표제 줄
+    if(isLayout(raw[i],l)){ flush(); fn=false; out.push(l); continue; }
+    const shortCap=l.length<60&&l===l.toUpperCase()&&/[A-Z]{3}/.test(l);   // 제목 줄(대문자)은 단독 문단
+    if(shortCap){ flush(); fn=false; out.push(l); out.push(''); continue; }
+    const cont=buf&&!/[.:;!?”")\]]$/.test(buf)&&!/^(\d{1,2}|[A-Z]\.|[IVX]+\.|\(\d+\)|[a-z]\)|•|-)\s/.test(l);
+    if(buf&&/^\[\d+\] $/.test(buf)) buf+=l;                                  // 각주 첫 줄
+    else if(cont&&/-$/.test(buf)&&/^[a-z]/.test(l)) buf=buf.slice(0,-1)+l;   // 줄끝 하이픈 결합(un-\nlawful → unlawful)
+    else if(cont) buf+=' '+l; else { flush(); buf=l; } }
+  flush(); return out.join('\n').replace(/\n{3,}/g,'\n\n').trim(); }
+function sections(full,us){ // 원문의 【】 헤더를 소제목으로만. 미국(CourtListener)은 의견 유형 코드 → 이름, 본문 정리
+  const body=us?usPretty(full):full;
+  return esc(body).replace(/【\s*([^】]{1,60}?)\s*】/g,(m,h)=>{ const parts=h.split('·').map(x=>x.trim()); const ty=US_OPTYPE[parts[0]]||(us?parts[0]:h.replace(/\s+/g,'')); return `</pre><h4>${esc(ty)}${us&&parts[1]?' · '+esc(parts[1]):''}</h4><pre>`; })
+}
+async function run(){
+  const text=q.value.trim(); if(!text)return; if(MODE==='us'){ syncUS(); if(!SCOPE.us.size){ res.innerHTML='<div class="empty">Select your State first.</div>'; return; } } home.classList.add('up'); res.innerHTML='<div class="empty">'+(window.__ready?L('검색 중…','Searching…'):L('데이터 팩 여는 중… (첫 검색만 수 초 걸립니다)','Opening data packs… (only the first search takes a few seconds)'))+'</div>';
+  $('#sbar').hidden=false; $('#go').disabled=true;
+  const t0=performance.now(); const k=document.querySelector('input[name=k]:checked').value; let d; try{ if(window.__TAURI__&&window.__TAURI__.core){ d=await window.__TAURI__.core.invoke('search',{q:text,k:+k,filter:null,mode:modeParam()}); d.rows=d.rows.map(fromRust); } else { const r=await fetch('/api/search?q='+encodeURIComponent(text)+'&k='+k+'&mode='+encodeURIComponent(modeParam())+'&hybrid='+($('#hyb').checked?1:0)); d=await r.json(); if(d.rows.length&&d.rows[0].title!==undefined) d.rows=d.rows.map(fromRust); } }catch(e){ $('#sbar').hidden=true; $('#go').disabled=false; res.innerHTML='<div class="empty">'+L('검색 실패: ','Search failed: ')+esc(String(e))+'</div>'; return; } $('#sbar').hidden=true; $('#go').disabled=false; const ms=Math.round(performance.now()-t0);
+  window.__ready=true;
+  const terms=[...new Set(text.replace(/[^가-힣a-zA-Z0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>=2))].slice(0,12);
+  if(!d.rows.length){res.innerHTML='<div class="empty">'+L('결과 없음','No results')+'</div>';return}
+  window.__rows=d.rows; window.__ms=ms; window.__terms=terms; window.__sortLaw=null; render();
+}
+// Rust 엔진(영문 키) → 화면 키
+function shortNo(no){ // 병합 사건번호(배상명령 초기사건 수십 건 등) → 앞 2건 + 외 N건, 전체는 title 로
+  const a=String(no||'').split(',').map(s=>s.trim()).filter(Boolean); if(a.length<=3) return esc(a.join(', '));
+  return `<span title="${esc(a.join(', '))}">${esc(a.slice(0,2).join(', '))} <span style="color:var(--faint)">${L('외 '+(a.length-2)+'건','+'+(a.length-2)+' more')}</span></span>`; }
+function fromRust(x){ if(x.사건명!==undefined) return x; return {score:x.score,사건명:x.title,사건번호:x.caseno,법원:x.court,선고일자:x.date,심급:x.level,종류:x.kind,결과:x.result,적용법률:x.laws,매칭구분:x.sec,매칭문단:x.snippet,판시사항:x.issue,원문:x.url,키프리스:x.kipris,
+  chain:(x.chain||[]).map(c=>({id:c.id,심급:c.level,법원:c.court,사건번호:c.caseno,선고일자:c.date,결과:c.result,판시사항:c.issue,판결요지:c.summary,참조판례:c.refs,참조조문:c.laws,전문:c.full,원심표기:c.prev_text,원심미수록:c.prev_missing,제1심표기:c.first_text,원문:c.url}))}; }
+const court=s=>/^([가-힣] )+[가-힣]$/.test(s||'')?s.replace(/ /g,''):(s||'');   // '국 민 권 익 위 원 회' 처럼 글자마다 띄운 기관명 정리
+function snip(t,terms){ t=String(t||'').replace(/\s+/g,' '); if(t.length<=220) return t; let i=-1; for(const w of terms){ const j=t.indexOf(w); if(j>=0&&(i<0||j<i)) i=j; } const a=Math.max(0,(i<0?0:i)-80); return (a>0?'…':'')+t.slice(a,a+220)+(a+220<t.length?'…':''); }
+function lawName(t){return (t||'').replace(/\s*제.*$/,'').trim()}   // "민법 제750조" → "민법"
+function render(){
+  const rows=window.__rows, terms=window.__terms, ms=window.__ms, sortLaw=window.__sortLaw;
+  const cnt={}; rows.forEach(x=>{[...new Set((x.적용법률||[]).map(lawName))].forEach(l=>{if(l)cnt[l]=(cnt[l]||0)+1})});
+  const facets=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,14);
+  const kinds={}; rows.forEach(x=>{if(x.종류)kinds[x.종류]=(kinds[x.종류]||0)+1});
+  const ordered=sortLaw?[...rows].sort((a,b)=>((b.적용법률||[]).some(t=>lawName(t)===sortLaw)?1:0)-((a.적용법률||[]).some(t=>lawName(t)===sortLaw)?1:0)):rows;
+  res.innerHTML=`<p class="meta">${rows.length}${L('건',' results')} · ${ms} ms · ${sortLaw?`<b>${esc(sortLaw)}</b> ${L('적용 판례 먼저','cases first')}`:($('#hyb').checked?L('의미·용어 결합 순','semantic + term order'):L('유사도 순','by similarity'))}${MODE==='us'?' · '+esc($('#ussel').textContent):(SCOPE[MODE].size?L(' · 범위: ',' · scope: ')+[...SCOPE[MODE]].map(k=>esc(PLABEL[k]||k)).join(', '):'')}</p>
+  <div class="facets"><span class="lbl">${MODE==='patent'?'IPC로 정렬':L('법률로 정렬','Sort by statute')}</span>${facets.map(([l,n])=>`<span class="f ${sortLaw===l?'on':''}" data-l="${esc(l)}">${esc(l)} ${n}</span>`).join('')}${sortLaw?'<span class="f" data-l="">✕ '+L('해제','Clear')+'</span>':''}</div>`
+  +ordered.map((x,i)=>x.종류==='특허공보'?`
+  <div class="row"><div class="h">
+    <div class="chips">${chip('특허','k')}${(x.결과||[]).map(t=>chip(t,/등록/.test(t)?'w':'')).join('')}${(x.적용법률||[]).slice(0,4).map(t=>chip(t,'r')).join('')}</div>
+    <p class="title"><b>${esc(x.사건명)}</b> · ${esc(court(x.법원))} · ${shortNo(x.사건번호)} · ${esc(fmtDate(x.선고일자))}</p>
+    <p class="issue">${hl(x.판시사항||x.매칭문단||'',terms)}</p>
+    <p class="links">${x.키프리스?`<a href="${esc(x.키프리스)}" target="_blank" rel="noopener">KIPRIS 원문 ↗</a>`:''}<a href="${esc(x.원문||'')}" target="_blank" rel="noopener">Google Patents ↗</a></p>
+  </div></div>`:`
+  <div class="row"><div class="h">
+    <div class="chips">${chip(x.종류||'',"k")}${(x.chain&&x.chain.length>1)?chip(x.chain.map(c=>(c.심급||'')+' '+(c.결과||[]).join('·')).join(' → '),'r'):(x.심급?chip(x.심급):'')}${(x.chain&&x.chain.length<=1)?(x.결과||[]).map(t=>chip(t,resultCls(t))).join(''):''}${(x.적용법률||[]).slice(0,4).map(t=>chip(t,'r')).join('')}</div>
+    <p class="title"><b>${esc(x.사건명)}</b> · ${esc(court(x.법원))} ${shortNo(x.사건번호)} · ${esc(fmtDate(x.선고일자))}</p>
+    <p class="issue">${hl(x.판시사항||x.매칭문단||'',terms)}</p>
+    ${(x.매칭구분&&x.매칭구분!=='판시사항'&&x.매칭문단)?`<p class="hit"><span class="lbl">${L('매칭','Match')} · ${esc(x.매칭구분)}</span>${hl(snip(x.매칭문단,terms),terms)}</p>`:(x.매칭구분?`<p class="hit"><span class="lbl">${L('매칭','Match')} · ${esc(x.매칭구분)}</span></p>`:'')}
+  </div>
+  </div></div>`).join('');
+  const ordIds=ordered.map(x=>x); document.querySelectorAll('.row .h').forEach((h,i)=>h.onclick=e=>{if(e.target.tagName==='A')return; if(ordIds[i].종류==='특허공보'){openExt(ordIds[i].키프리스||ordIds[i].원문);return;} openReader(ordIds,i)});
+  document.querySelectorAll('.facets .f').forEach(f=>f.onclick=()=>{window.__sortLaw=f.dataset.l||null;render();window.scrollTo({top:res.offsetTop-10,behavior:'smooth'});});
+}
+// ── 원심 표기 → 정규화 링크 (법원 약칭 → 정식명, 사건번호) ──
+const COURT={'고법':'고등법원','지법':'지방법원','가정법원':'가정법원','행정법원':'행정법원','회생법원':'회생법원','특허법원':'특허법원','지원':'지원'};
+function normCourt(s){ // "서울고법" → "서울고등법원", "부산고법 (창원)" → "부산고등법원 창원재판부", "수원지법 안양지원" 그대로
+  let c=s.replace(/\s+/g,' ').trim(); const br=c.match(/\((.+?)\)/); c=c.replace(/\(.+?\)/,'').trim();
+  c=c.replace(/고법$/,'고등법원').replace(/지법(?=\s|$)/,'지방법원').replace(/지법\s/,'지방법원 ');
+  if(/^(서울|수원|대전|대구|부산|광주)고등법원$/.test(c)&&br) c+=' '+br[1]+'재판부';
+  if(c==='대법원') return c; return c;
+}
+function prevLinks(txt){ // "서울고법 2023. 9. 7. 선고 2023나2001980, 2001997 판결"
+  const m=(txt||'').match(/^(.+?)\s+\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.?\s*(?:선고|자)\s*(\(?[^\s]*\)?\s*\d{4}[가-힣]{1,2}\d+)/);
+  if(!m) return '';
+  const court=normCourt(m[1]), no=m[2].replace(/\(.+?\)\s*/,'').replace(/,.*$/,'').trim();
+  return `<a href="https://casenote.kr/${encodeURIComponent(court)}/${encodeURIComponent(no)}" target="_blank" rel="noopener">케이스노트 ↗</a> · <a href="https://www.law.go.kr/precSc.do?query=${encodeURIComponent(no)}" target="_blank" rel="noopener">법제처 ↗</a> · <a href="https://www.scourt.go.kr/portal/information/finalruling/peruse/peruse_status.jsp" target="_blank" rel="noopener">판결서 열람 신청 ↗</a>`;
+}
+function lineage(chain){ // 항상 1심→2심→3심 사다리. 수록/미수록(링크)/번호 불명. 미국 판례는 Trial→Appellate→Highest
+  const us=chain.some(c=>['Trial','Appellate','Highest'].includes(c.심급));
+  if(us){ const byLv={}; chain.forEach(c=>{byLv[c.심급]=c}); const lvs=['Trial','Appellate','Highest'];
+    const nodes=lvs.map(lv=>{ const c=byLv[lv]; if(c) return `<span class="n in">${lv} · ${esc(c.법원||'')} ${shortNo(c.사건번호||'')}${(c.결과||[]).length?' · '+esc((c.결과||[]).join('·')):''}</span>`;
+      let txt=null; if(lv==='Appellate'&&byLv['Highest']) txt=byLv['Highest'].원심표기; if(lv==='Trial'&&byLv['Appellate']) txt=byLv['Appellate'].원심표기;
+      if(txt){ const cite=(txt.split(',').slice(-1)[0]||'').trim(); return `<span class="n miss">${lv} · not in packs · ${esc(txt)} · <a href="https://www.courtlistener.com/?q=${encodeURIComponent('"'+cite+'"')}" target="_blank" rel="noopener">CourtListener ↗</a></span>`; }
+      return `<span class="n miss">${lv} · —</span>`; });
+    return '<span style="color:var(--faint);letter-spacing:.1em;margin-right:4px">HISTORY</span>'+nodes.join('<span class="arr">→</span>'); }
+  const byLv={}; chain.forEach(c=>{byLv[c.심급]=c});
+  const has3=!!byLv['3심'], has2=!!byLv['2심'], has1=!!byLv['1심'];
+  const lvs=(has3||has2)?['1심','2심','3심']:['1심'];
+  if(!has3&&has2) lvs.pop();                          // 2심까지만 존재하면 3심 칸 없음(상고 여부 불명)
+  const nodes=lvs.map(lv=>{
+    const c=byLv[lv];
+    if(c) return `<span class="n in">${lv} · 수록 · ${esc(c.법원||'')} ${shortNo(c.사건번호||'')}${(c.결과||[]).length?' · '+esc((c.결과||[]).join('·')):''}</span>`;
+    // 미수록: 표기를 알 수 있는 경우 링크, 아니면 번호 불명
+    let txt=null;
+    if(lv==='2심'&&byLv['3심']) txt=byLv['3심'].원심표기;
+    if(lv==='1심'&&byLv['2심']) txt=byLv['2심'].제1심표기||byLv['2심'].원심표기;
+    const short=(txt||'').replace(/\s+\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.?\s*(선고|자)\s*/,' ').replace(/\s*판결.*$/,'').replace(/,.*$/,'');
+    return txt?`<span class="n miss">${lv} · 미수록 · ${esc(short)} · ${prevLinks(txt)||''}</span>`:`<span class="n miss">${lv} · 미수록 · 번호 불명${lv==='1심'?' (2심 판결문에 기재)':''}</span>`;
+  });
+  return '<span style="color:var(--faint);letter-spacing:.1em;margin-right:4px">계통</span>'+nodes.join('<span class="arr">→</span>');
+}
+if(!IS_TAURI) fetch('/api/loaded').then(r=>r.json()).then(j=>{ if(j.loaded&&j.loaded.length){ LOADED=j.loaded; drawScope(); } }).catch(()=>{});   // 웹 모드도 실린 팩만 활성
+drawScope();   // esc 등 정의 뒤에 초기 렌더
+applyLang();   // 한국어 기본 문구(유머 포함)도 초기 1회 적용 (앞에서 부르면 TDZ ReferenceError로 스크립트 전체가 죽음)
+// ── 데이터 팩 (Tauri) ──
+if(IS_TAURI){$('#pkopen').style.display='inline-block';$('#pkopen').onclick=openPacks;
+  const LBL={admin:'행정',appeal:'행정심판·위원회',civil:'민사',constitution:'헌법',criminal:'형사',family:'가사',interpretation:'해석례',patent:'특허법원',tax:'세법',treaty:'조약'};
+  const gauge=(f)=>{ $('#gauge').style.display='inline-block'; $('#gaugeFill').style.width=Math.round(f*100)+'%'; };
+  (async function poll(){ window.__poll=poll; const pk=$('#packs').classList.contains('on'); try{ const s=await inv('stats');
+      if(s.status==='ready'){ if(!window.__ready){ setTimeout(()=>checkUpdates(false),1500); } window.__ready=true; if(JSON.stringify(LOADED)!==JSON.stringify(s.loaded||[])){ LOADED=s.loaded||[]; drawScope(); } const base=L('준비 완료 · '+s.recs.toLocaleString()+'건 · 팩 '+(s.loaded||[]).length+'개','Ready · '+s.recs.toLocaleString()+' cases · '+(s.loaded||[]).length+' packs');
+        if(s.stage==='warm'&&s.total>0&&s.done<s.total){ $('#ready').textContent=base+L(' · 디스크 캐시 ',' · disk cache ')+Math.round(100*s.done/s.total)+'%'; gauge(s.done/s.total); setTimeout(poll,800); return; }
+        $('#ready').textContent=base; $('#gauge').style.display='none'; if(window.__reloading){ window.__reloading=false; $('#pkstatus').textContent=base; $('#pkgauge').style.display='none'; const ab=$('#pkapply'); ab.disabled=false; ab.style.opacity=''; ab.textContent=L('선택한 팩 내려받기 · 적용','Download selected · Apply'); if(window.__firstApply){ window.__firstApply=false; $('#packs').classList.remove('on'); $('#pkintro').hidden=true; q.focus(); } else if(pk) openPacks(); } return; }
+      if(String(s.status||'').startsWith('error')){ $('#gauge').style.display='none';
+        if(/데이터 팩이 없/.test(s.status)){ window.__nopacks=true; if(LOADED===null||LOADED.length){ LOADED=[]; drawScope(); } $('#ready').textContent=L('데이터 팩이 아직 없습니다 · 아래에서 필요한 것만 받으세요','No data packs yet · download only what you need below'); if(!window.__introShown && $('#country').hidden){ window.__introShown=true; $('#pkintro').hidden=false; openPacks(); } setTimeout(poll,3000); return; }
+        $('#ready').textContent=L('준비 실패: ','Failed to load: ')+s.status.slice(7); if(window.__reloading){ window.__reloading=false; const ab=$('#pkapply'); ab.disabled=false; ab.style.opacity=''; ab.textContent=L('선택한 팩 내려받기 · 적용','Download selected · Apply'); $('#pkstatus').textContent=$('#ready').textContent; } return; }
+      const lab=s.label?(PLABEL[s.label]||LBL[s.label]||(s.label.startsWith('pat_')?'특허 '+s.label.slice(4):s.label)):''; $('#ready').textContent=L('데이터 팩 여는 중 ','Opening data packs ')+(s.total?`${s.done+1}/${s.total}`:'')+(lab?' · '+lab:''); if(pk){ $('#pkstatus').textContent=$('#ready').textContent; if(s.total){ $('#pkgauge').style.display=''; $('#pkgaugeFill').style.width=Math.round(100*s.done/s.total)+'%'; } } if(s.total) gauge(s.done/s.total);
+    }catch(e){} setTimeout(poll,500); })();}
+let PKTAB='sel';
+function bindDel(){ const mb=b=>b>=1e9?(b/1e9).toFixed(1)+' GB':(b/1e6).toFixed(0)+' MB'; document.querySelectorAll('#pklist .pkdel, #pklist .usdel, #pklist .pkdelall').forEach(a=>a.onclick=async e=>{ e.preventDefault(); e.stopPropagation(); const keys=(a.dataset.keys||a.dataset.k).split(','); const st=$('#pkstatus');
+  st.textContent=L(`삭제 중… (${keys.length}개)`,`Deleting… (${keys.length})`); const ab=$('#pkapply'); ab.disabled=true; ab.style.opacity='.5'; try{ const freed=await inv('delete_packs',{keys}); st.textContent=L(`삭제됨 · ${mb(freed)} 확보 — 엔진을 다시 싣는 중`,`Deleted · ${mb(freed)} freed — reloading the engine`); window.__ready=false; window.__reloading=true; setTimeout(()=>window.__poll&&window.__poll(),300); }catch(err){ st.textContent=L('삭제 실패: ','Delete failed: ')+err; } }); }
+function drawInstalled(ps){ const mb=b=>b>=1e9?(b/1e9).toFixed(1)+' GB':(b/1e6).toFixed(0)+' MB'; const inst=ps.filter(p=>p.installed); const kr=inst.filter(p=>!p.key.startsWith('us_')), us=inst.filter(p=>p.key.startsWith('us_'));
+  const row=p=>`<div class="instrow"><b>${esc(PLABEL[p.key]||p.label)}</b><span class="sz">${p.recs.toLocaleString()}${L('건',' cases')} · ${mb(p.bytes)}</span><span class="${p.selected?'on':'off'}">${p.selected?L('검색 중','in use'):L('꺼짐','off')}</span><a href="#" class="pkdel" data-k="${p.key}" title="${L('디스크에서 삭제','Delete from disk')}">✕</a></div>`;
+  const card=(title,items)=>items.length?`<div class="pkcard"><div class="hd"><b>${title}</b><span class="band">${items.length}${L('개',' packs')} · ${mb(items.reduce((a,p)=>a+p.bytes,0))}</span><span class="ops"><a href="#" class="pkdelall" data-keys="${items.map(p=>p.key).join(',')}">${L('전부 삭제','Delete all')}</a></span></div>${items.map(row).join('')}</div>`:'';
+  const tot=inst.reduce((a,p)=>a+p.bytes,0);
+  return `<p class="band" style="margin:0 0 6px">${L(`이 컴퓨터에 내려받은 팩 ${inst.length}개 · ${mb(tot)}. ✕ 를 누르면 디스크에서 지웁니다(다시 받을 수 있음).`,`${inst.length} packs on this computer · ${mb(tot)}. ✕ removes a pack from disk (you can download it again).`)}</p>`+(LANG==='en'?card('United States',us)+card('대한민국',kr):card('판례 · 해석례 · 심판 · 특허',kr)+card('United States',us))+(inst.length?'':`<p class="band">${L('설치된 팩이 없습니다.','No packs installed.')}</p>`); }
+async function openPacks(){ $('#packs').classList.add('on'); document.querySelectorAll('.pkt').forEach(t=>{ t.classList.toggle('on',t.dataset.t===PKTAB); t.onclick=()=>{ PKTAB=t.dataset.t; openPacks(); }; }); $('#pkapply').style.display=PKTAB==='sel'?'':'none'; if(LANG==='en') $('#pkintro').innerHTML='<b>Download only what you need.</b> Pick the courts you practice in, then the eras. Each state-era pack is tens to hundreds of MB; you can add or remove packs any time, and everything you download is searched only on this computer.'; $('#pklist').innerHTML='<p class="band">'+L('불러오는 중…','Loading…')+'</p>';
+  try{ const ps=await inv('packs'); window.__PS=ps; if(PKTAB==='inst'){ $('#pklist').innerHTML=drawInstalled(ps); bindDel(); $('#pksum').textContent=''; return; } const mb=b=>b>=1e9?(b/1e9).toFixed(1)+' GB':(b/1e6).toFixed(0)+' MB'; const by=Object.fromEntries(ps.map(p=>[p.key,p]));
+    const row=p=>`<label class="pkrow"><input type="checkbox" data-k="${p.key}" data-b="${p.bytes}" ${p.selected?'checked':''}><b>${esc(PLABEL[p.key]||p.label)}</b><span class="sz">${p.recs.toLocaleString()}${L('건',' cases')} · ${mb(p.bytes)}</span><span class="st ${p.update?'up':p.installed?'ok':''}">${p.update?L('업데이트','update'):p.installed?L('설치됨','installed'):L('내려받기','download')}</span></label>`;
+    const group=(title,keys,note)=>{ const items=keys.map(([k])=>by[k]).filter(Boolean); if(!items.length) return ''; const tot=items.reduce((a,p)=>a+p.bytes,0);
+      return `<div class="pkcard" data-group="${title}"><div class="hd"><b>${title}</b><span class="band">${items.length}개 · ${mb(tot)}${note?' · '+note:''}</span><span class="ops"><a href="#" class="gsel" data-on="1">전체 선택</a><a href="#" class="gsel" data-on="0">전체 해제</a></span></div>${items.map(row).join('')}</div>`; };
+    const usAvail=k=>ERAS.some(([e])=>by[k+'_'+e]); const usSize=k=>ERAS.reduce((a,[e])=>a+((by[k+'_'+e]||{}).bytes||0),0);
+    const usTotal=[...USP.map(([k])=>k),...STATES.map(([c])=>'us_'+c)].reduce((a,k)=>a+usSize(k),0);
+    const hidden=[...Object.keys(by)].filter(k=>k.startsWith('us_')).map(k=>`<input type="checkbox" class="uspk" data-k="${k}" data-b="${by[k].bytes}" ${by[k].selected?'checked':''} hidden>`).join('');
+    const us=`<div class="pkcard" data-group="us"><div class="hd"><b>United States</b><span class="band">${mb(usTotal)} available · pick courts, then eras</span><span class="ops"><a href="#" id="usClear">Clear all</a></span></div>
+      <div class="usrow"><span class="lbl">Federal</span><label><input type="checkbox" id="usScotus" ${usAvail('us_scotus')?'':'disabled'}> U.S. Supreme Court${usAvail('us_scotus')?' · '+mb(usSize('us_scotus')):' · not available yet'}</label><label title="Court of Appeals for each checked state’s circuit + that state’s federal district & bankruptcy courts"><input type="checkbox" id="usFedLower" ${usAvail('us_fed_ca2')?'':'disabled'}> Circuit &amp; district courts of checked states${usAvail('us_fed_ca2')?'':' · not available yet'}</label><label title="Nationwide appeals in patents, trademarks, international trade and federal claims (Washington, D.C.)"><input type="checkbox" id="usFedCafc" ${usAvail('us_fed_cafc')?'':'disabled'}> Federal Circuit (patents)${usAvail('us_fed_cafc')?' · '+mb(usSize('us_fed_cafc')):' · not available yet'}</label><label title="Court of Federal Claims · Tax Court · Court of International Trade · Veterans · Military"><input type="checkbox" id="usFedOther" ${usAvail('us_fed_other')?'':'disabled'}> Other federal courts${usAvail('us_fed_other')?' · '+mb(usSize('us_fed_other')):' · not available yet'}</label></div>
+      <div class="usrow"><span class="lbl">States</span><span class="band">Packs are large (a state runs 0.5–7 GB across its eras). Download only the courts you practice in — you can add more any time.</span></div>
+      <div class="usgrid" id="usgrid">${STATES.map(([c,n])=>`<label class="${usAvail('us_'+c)?'':'na'}" title="${n}${usAvail('us_'+c)?' · '+mb(usSize('us_'+c)):' · not available yet'}"><input type="checkbox" data-st="${c}" ${usAvail('us_'+c)?'':'disabled'}><span class="cd">${c.toUpperCase()}</span><span>${n}</span></label>`).join('')}</div>
+      <div class="usrow"><span class="lbl">Eras</span>${ERAS.map(([e,el])=>`<label><input type="checkbox" data-era="${e}" checked> ${el}</label>`).join('')}</div>${hidden}</div>`;
+    $('#pklist').innerHTML=LANG==='en'?us:'<div class="pkcols">'+group('판례 · 해석례 · 심판',PACKS,'')+group('특허 공보 · IPC 섹션',PATS,'필요한 분야만 권장, 8GB 노트북은 1~2개')+'</div>';   // 다른 나라 팩은 아예 표시하지 않음(국가는 첫 실행 때 정함)
+    // 미국: (연방대법원 ∪ 체크한 주) × 체크한 시대 → 숨은 팩 체크박스 동기화. 초기값은 현재 선택 상태에서 역산
+    const fresh=!ps.some(p=>p.installed);   // 첫 실행 기본값
+    if(fresh&&LANG!=='en') document.querySelectorAll('#pklist input[data-k]').forEach(i=>{ i.checked=!i.dataset.k.startsWith('pat_'); });
+    const uspk=[...document.querySelectorAll('#pklist .uspk')]; const selKeys=new Set(uspk.filter(i=>i.checked).map(i=>i.dataset.k));
+    if(selKeys.size){ if([...selKeys].some(k=>k.startsWith('us_scotus_'))) $('#usScotus').checked=true; if([...selKeys].some(k=>/^us_fed(d_|_ca)/.test(k))) $('#usFedLower').checked=true; if([...selKeys].some(k=>k.startsWith('us_fed_other_'))) $('#usFedOther').checked=true; if([...selKeys].some(k=>k.startsWith('us_fed_cafc_'))) $('#usFedCafc').checked=true; document.querySelectorAll('#usgrid input').forEach(i=>{ if([...selKeys].some(k=>k.startsWith('us_'+i.dataset.st+'_'))) i.checked=true; }); const eras=new Set([...selKeys].map(k=>k.split('_').pop())); document.querySelectorAll('[data-era]').forEach(i=>i.checked=eras.has(i.dataset.era)); }
+    if(fresh&&LANG==='en'){ if(!$('#usScotus').disabled) $('#usScotus').checked=true; if(!$('#usFedLower').disabled) $('#usFedLower').checked=true; }
+    const syncPk=()=>{ const courts=[]; if($('#usScotus').checked) courts.push('us_scotus'); if($('#usFedOther').checked) courts.push('us_fed_other'); if($('#usFedCafc').checked) courts.push('us_fed_cafc'); document.querySelectorAll('#usgrid input:checked').forEach(i=>{ courts.push('us_'+i.dataset.st); if($('#usFedLower').checked) courts.push(...fedKeys(i.dataset.st)); }); const eras=[...document.querySelectorAll('[data-era]:checked')].map(i=>i.dataset.era);
+      uspk.forEach(i=>{ const [_,c,e]=i.dataset.k.match(/^us_(.+)_([a-z]+)$/)||[]; i.checked=courts.includes('us_'+c)&&eras.includes(e); }); };
+    bindDel();
+    const usc=$('#usClear'); if(usc) usc.onclick=e=>{ e.preventDefault(); document.querySelectorAll('#usScotus, #usFedLower, #usFedCafc, #usFedOther, #usgrid input').forEach(i=>i.checked=false); syncPk(); sum(); };
+    document.querySelectorAll('#usScotus, #usFedLower, #usFedCafc, #usFedOther, #usgrid input, [data-era]').forEach(i=>i.addEventListener('change',()=>{ syncPk(); sum(); }));
+    if(fresh&&LANG==='en'){ syncPk(); }
+    const sum=()=>{ const on=[...document.querySelectorAll('#pklist input[data-k]:checked')]; $('#pksum').textContent=L(`선택 ${on.length}개`,`${on.length} selected`)+` · ${mb(on.reduce((a,i)=>a+ +i.dataset.b,0))}`; };
+    document.querySelectorAll('#pklist .gsel').forEach(a=>a.onclick=e=>{ e.preventDefault(); a.closest('.pkcard').querySelectorAll('input').forEach(i=>i.checked=a.dataset.on==='1'); sum(); });
+    document.querySelectorAll('#pklist input').forEach(i=>i.onchange=sum); sum();
+  }catch(e){ $('#pklist').innerHTML='<p class="band">'+esc(String(e))+'</p>'; } }
+$('#pkclose').onclick=()=>$('#packs').classList.remove('on');
+// ── 업데이트: 시작 시 1회 자동 + 패널에서 수동. 있으면 푸터에 '업데이트 N개 · 받기' ──
+let UPD=[];
+async function checkUpdates(manual){ if(!IS_TAURI) return; try{ const ps=await inv('packs'); UPD=ps.filter(p=>p.update).map(p=>p.key); }catch(e){ if(manual) $('#pkupd').textContent=L('확인 실패: ','Check failed: ')+e; return; }
+  const n=UPD.length; const b=$('#upd'); b.style.display=n?'':'none'; b.textContent=L(`업데이트 ${n}개 · 받기`,`${n} update${n>1?'s':''} · Download`);
+  if(manual) $('#pkupd').textContent=n?L(`업데이트 ${n}개: `,`${n} available: `)+UPD.map(k=>PLABEL[k]||k).join(', '):L('최신 상태입니다.','Everything is up to date.'); return n; }
+async function applyUpdates(){ if(!UPD.length) return; const b=$('#upd'); const ps=await inv('packs'); const keep=ps.filter(p=>p.selected).map(p=>p.key); if(IS_MOBILE){ const bytes=ps.filter(p=>UPD.includes(p.key)).reduce((a,p)=>a+p.bytes,0); if(!(await cellWarn(bytes))) return; }
+  for(const k of UPD){ b.textContent=(PLABEL[k]||k)+L(' 받는 중…',' downloading…'); try{ await inv('download_pack',{key:k}); }catch(e){ b.textContent=(PLABEL[k]||k)+L(' 실패: ',' failed: ')+e; return; } }
+  UPD=[]; b.style.display='none'; await inv('select_packs',{keys:keep}); $('#ready').textContent=L('업데이트 적용 — 엔진을 다시 싣는 중','Updates applied — reloading the engine'); window.__ready=false; window.__reloading=true; setTimeout(()=>window.__poll&&window.__poll(),300); }
+$('#upd').onclick=applyUpdates; $('#pkcheck').onclick=()=>{ $('#pkupd').textContent=L('확인 중…','Checking…'); checkUpdates(true).then(()=>{ if($('#packs').classList.contains('on')) openPacks(); }); };
+function cellWarn(bytes){ return new Promise(res=>{ const m=$('#cellwarn'); const mb=b=>b>=1e9?(b/1e9).toFixed(1)+' GB':(b/1e6).toFixed(0)+' MB'; $('#cwTitle').textContent=L('셀룰러 요금 주의','Cellular data warning'); $('#cwText').textContent=L(`약 ${mb(bytes)}를 내려받습니다. 셀룰러(LTE/5G) 연결이면 데이터 요금이 크게 나올 수 있습니다. Wi-Fi에서 받는 것을 권합니다.`,`About ${mb(bytes)} will be downloaded. On a cellular (LTE/5G) connection this can use a lot of your data plan. Wi-Fi is recommended.`); $('#cwNo').textContent=L('취소','Cancel'); $('#cwYes').textContent=L('계속 받기','Download anyway'); m.hidden=false; $('#cwYes').onclick=()=>{ m.hidden=true; res(true); }; $('#cwNo').onclick=()=>{ m.hidden=true; res(false); }; }); }
+$('#pkapply').onclick=async()=>{ const ab=$('#pkapply'); if(ab.disabled) return; ab.disabled=true; ab.style.opacity='.5'; ab.textContent=L('적용 중…','Applying…'); const keys=[...document.querySelectorAll('#pklist input[data-k]:checked')].map(i=>i.dataset.k); const st=$('#pkstatus');
+  const by=Object.fromEntries((window.__PS||[]).map(p=>[p.key,p])); const need=keys.filter(k=>!(by[k]&&by[k].installed)||(by[k]&&by[k].update)); const ok=new Set(keys.filter(k=>by[k]&&by[k].installed)); const failed=[];
+  const pg=$('#pkgauge'), pf=$('#pkgaugeFill'); const mbf=b=>(b/1e6).toFixed(0)+' MB'; let di=0;
+  window.__firstApply=!(window.__PS||[]).some(p=>p.installed);
+  if(IS_MOBILE){ let bytes=need.reduce((a,k)=>a+((by[k]&&by[k].bytes)||0),0); try{ const s0=await inv('stats'); if(s0&&s0.model===false) bytes+=586e6; }catch(e){} if(bytes>0&&!(await cellWarn(bytes))){ ab.disabled=false; ab.style.opacity=''; ab.textContent=L('선택한 팩 내려받기 · 적용','Download selected · Apply'); st.textContent=L('취소됨','Cancelled'); return; } }
+  try{ const s0=await inv('stats'); if(s0&&s0.model===false){ pg.style.display=''; pf.style.width='0'; st.textContent=L('검색 모델 내려받는 중… (586 MB, 한 번만)','Downloading the search model… (586 MB, once)');
+    const tick=setInterval(async()=>{ try{ const s=await inv('stats'); if(s.stage==='dl'&&s.total){ pf.style.width=Math.round(100*s.done/s.total)+'%'; st.textContent=L('검색 모델 내려받는 중 ','Downloading the search model ')+`${mbf(s.done)} / ${mbf(s.total)}`; } }catch(e){} },400);
+    try{ await inv('download_model'); }catch(e){ clearInterval(tick); pg.style.display='none'; st.textContent=L('모델 내려받기 실패: ','Model download failed: ')+e; ab.disabled=false; ab.style.opacity=''; ab.textContent=L('선택한 팩 내려받기 · 적용','Download selected · Apply'); return; } clearInterval(tick); } }catch(e){}
+  for(const k of need){ di++; pg.style.display=''; pf.style.width='0'; st.textContent=(PLABEL[k]||k)+L(' 내려받는 중…',' downloading…')+` (${di}/${need.length})`;
+    const tick=setInterval(async()=>{ try{ const s=await inv('stats'); if(s.stage==='dl'&&s.total){ pf.style.width=Math.round(100*s.done/s.total)+'%'; st.textContent=(PLABEL[k]||k)+L(' 내려받는 중 ',' downloading ')+`${mbf(s.done)} / ${mbf(s.total)} (${di}/${need.length})`; } }catch(e){} },400);
+    try{ await inv('download_pack',{key:k}); ok.add(k); }catch(e){ failed.push(k); if(!(by[k]&&by[k].installed)) ok.delete(k); } clearInterval(tick); }
+  pg.style.display='none';   // 서버가 없으면 설치본은 그대로 쓰고 미설치만 건너뜀
+  try{ await inv('select_packs',{keys:[...ok]}); }catch(e){ ab.disabled=false; ab.style.opacity=''; ab.textContent=L('선택한 팩 내려받기 · 적용','Download selected · Apply'); st.textContent=L('적용 실패: ','Apply failed: ')+e; return; } window.__ready=false; window.__reloading=true; setTimeout(()=>window.__poll&&window.__poll(),300);
+  st.textContent=(failed.length?L(`받지 못한 팩 ${failed.length}개(서버 연결 안 됨: ${failed.slice(0,3).map(k=>PLABEL[k]||k).join(', ')}${failed.length>3?' …':''}) · `,`${failed.length} pack${failed.length>1?'s':''} not downloaded (no server: ${failed.slice(0,3).map(k=>PLABEL[k]||k).join(', ')}${failed.length>3?' …':''}) · `):'')+L('적용됨 — 엔진을 다시 싣는 중입니다. 준비 완료가 뜨면 검색하세요.','Applied — reloading the engine. Search once the footer says Ready.'); $('#pkintro').hidden=true; };
+// ── 전체화면 리더: 심급 수만큼 분할 ──
+let R={list:[],i:0};
+function openReader(list,i){R={list,i}; drawReader(); $('#reader').classList.add('on'); document.body.style.overflow='hidden';}
+function closeReader(){$('#reader').classList.remove('on'); document.body.style.overflow='';}
+function drawReader(){
+  const x=R.list[R.i]; const chain=(x.chain&&x.chain.length)?x.chain:[{심급:x.심급,법원:x.법원,사건번호:x.사건번호,선고일자:x.선고일자,결과:x.결과,판시사항:x.판시사항,전문:'',원문:x.원문}];
+  const terms=window.__terms||[];
+  const isUS=String(x.종류||'').startsWith('US'); const isCourt=isUS||['민사','형사','일반행정','행정','가사','특허'].includes(x.종류);   // 해석례·행정심판·헌재·조약·조세심판·위원회·특허공보는 심급 개념 없음
+  $('#lineage').style.display=isCourt?'':'none'; $('#lineage').innerHTML=isCourt?lineage(chain):'';
+  $('#rtitle').innerHTML=`<b>${esc(x.사건명)}</b> · ${R.i+1}/${R.list.length}${isCourt?' · '+(chain.length>1?L(chain.length+'개 심급 나란히',chain.length+' instances side by side'):L('단일 심급','single instance')):' · '+esc(x.종류||'')}`;
+  window.__afterCols=()=>{ const cols=$('#cols'); const n=cols.children.length; let d=$('#swdots'); if(!d){ d=document.createElement('div'); d.id='swdots'; d.className='swdots'; cols.parentElement.insertBefore(d, cols); }
+    const draw=()=>{ const i=Math.round(cols.scrollLeft/Math.max(1,cols.clientWidth)); d.innerHTML=n>1?Array.from({length:n},(_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')+`<span style="margin-left:8px">${esc((chain[i]&&chain[i].심급)||'')}${L(' · 좌우로 넘기기',' · swipe')}</span>`:''; };
+    cols.onscroll=draw; if(window.innerWidth<=900&&n>1){ requestAnimationFrame(()=>{ cols.scrollLeft=cols.clientWidth*(n-1); draw(); }); } else draw(); };
+  $('#cols').innerHTML=chain.map(c=>`<div class="col"><div class="ch"><div class="lv">${esc(isCourt?(c.심급||''):(x.종류||''))} ${(c.결과||[]).map(t=>chip(t,resultCls(t))).join('')}</div><div class="t">${esc(c.법원||'')} ${shortNo(c.사건번호||'')} · ${esc(fmtDate(c.선고일자||''))}</div>${c.원심미수록?`<div class="miss">원심 ${esc(c.원심표기||'')} — 미수록 · ${prevLinks(c.원심표기)}</div>`:''}</div>
+    ${c.판시사항&&!(isUS&&(c.전문||'').replace(/【[^】]*】\n?/,'').slice(0,200).replace(/\s+/g,' ').startsWith((c.판시사항||'').slice(0,120).replace(/\s+/g,' ')))?`<h4>${L('판시사항','Headnote / Syllabus')}</h4><pre>${isUS?esc(usPretty(c.판시사항)):hl(c.판시사항,terms)}</pre>`:''}
+    ${c.판결요지?`<h4>${L('판결요지','Summary')}</h4><pre>${hl(c.판결요지,terms)}</pre>`:''}
+    ${c.참조조문?`<h4>${L('참조조문','Statutes cited')}</h4><pre>${esc(c.참조조문)}</pre>`:''}
+    ${c.참조판례?`<h4>${L('참조판례','Cases cited')}</h4><pre>${esc(c.참조판례)}</pre>`:''}
+    <h4>${L('전문','Full opinion')}</h4><pre>${sections(c.전문||'',isUS)}</pre>
+    <p><a href="${c.원문}" target="_blank" rel="noopener">${isUS?'CourtListener ↗':'국가법령정보센터 ↗'}</a>${isCourt&&!isUS&&c.법원&&c.사건번호?` · <a href="https://casenote.kr/${encodeURIComponent(normCourt(c.법원))}/${encodeURIComponent(String(c.사건번호).split(',')[0].trim())}" target="_blank" rel="noopener">케이스노트 ↗</a>`:''}</p></div>`).join(''); window.__afterCols();
+}
+function fmtDate(d){ const m=String(d||'').match(/(\d{4})\D*(\d{1,2})\D*(\d{1,2})/); if(!m) return String(d||''); return LANG==='en'?`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`:`${m[1]}. ${+m[2]}. ${+m[3]}.`; }
+function cite(c,x){ // 판례: 대법원 2023. 5. 18. 선고 2022다12345 판결 / 그 외: 기관 사건번호 (날짜)
+  const ct=court(c.법원||x.법원||''); const no=c.사건번호||x.사건번호||''; const d=fmtDate(c.선고일자||x.선고일자);
+  if(/법원$/.test(ct)||/^\d{4}[가-힣]{1,2}\d+/.test(no)) return `${ct} ${d} 선고 ${no} 판결`;
+  if(String(x.종류||'').startsWith('US')){ const y=String(c.선고일자||x.선고일자||'').slice(0,4); return `${x.사건명}, ${no} (${ct}${y?' '+y:''})`; }
+  return `${ct} ${no} (${d})`; }
+async function copyText(t){ try{ await navigator.clipboard.writeText(t); }catch(e){ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } }
+$('#rcopy').onclick=async()=>{ const x=R.list[R.i]; const chain=(x.chain&&x.chain.length)?x.chain:[x]; const sel=window.getSelection(); const st=sel&&sel.toString().trim();
+  let idx=0; if(st&&sel.anchorNode){ const col=(sel.anchorNode.nodeType===1?sel.anchorNode:sel.anchorNode.parentElement).closest('.col'); if(col) idx=[...document.querySelectorAll('#cols .col')].indexOf(col); }
+  const c=chain[Math.max(idx,0)]||x; const src=cite(c,x); const t=st?`"${st}" (${src})`:src; await copyText(t); $('#rcopied').textContent=L('복사됨: ','Copied: ')+t.slice(0,60)+(t.length>60?'…':''); setTimeout(()=>$('#rcopied').textContent='',4000); };
+$('#rclose').onclick=closeReader; $('#rprev').onclick=()=>{if(R.i>0){R.i--;drawReader();}}; $('#rnext').onclick=()=>{if(R.i<R.list.length-1){R.i++;drawReader();}};
+document.addEventListener('keydown',e=>{if(!$('#reader').classList.contains('on'))return; if(e.key==='Escape')closeReader(); if(e.key==='ArrowLeft')$('#rprev').click(); if(e.key==='ArrowRight')$('#rnext').click();});
+</script></body></html>
