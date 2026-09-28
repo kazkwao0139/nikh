@@ -153,7 +153,9 @@ impl Engine {
         }
         let mut next_of = HashMap::new();
         for (id, (pno, _)) in &prev_of { if let Some(p) = pno { if let Some(pid) = by_no.get(p) { next_of.insert(pid.clone(), id.clone()); } } }
+        progress(packs.len(), packs.len() + 2, "tokenizer");
         let tok = Tokenizer::from_file(model_dir.join("tokenizer.json")).map_err(|e| anyhow::anyhow!("tokenizer: {e}"))?;
+        progress(packs.len() + 1, packs.len() + 2, "onnx");
         // int8(양자화) 우선, 로드 실패(축소 빌드 onnxruntime 등)면 fp32 model.onnx 로 폴백
         let candidates: Vec<std::path::PathBuf> = ["model_int8.onnx", "model.onnx"].iter().map(|f| model_dir.join(f)).filter(|p| p.exists()).collect();
         if candidates.is_empty() { anyhow::bail!("onnx 모델 없음: {}", model_dir.display()); }

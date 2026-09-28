@@ -21,5 +21,13 @@ PATH=$HOME/.cargo/bin:$PATH cargo tauri ios build      # iPadOS
 ```
 검색 모델(`data/onnx/bge-m3/model_int8.onnx`, `tokenizer.json`)은 빌드 전에 https://nike-data.hrmk.studio/onnx/bge-m3/ 에서 받아 두면 앱에 내장됩니다.
 
+iPadOS 빌드는 추가로 공식 onnxruntime-c 1.23 xcframework(양자화 연산자 포함 전체 빌드)를 `vendor/ort-ios/onnxruntime.xcframework`에 두어야 합니다(`gen/apple/project.yml`의 OTHER_LDFLAGS 참조). 서명 팀·번들 ID는 `tauri.conf.json`과 `gen/apple/project.yml`에서 바꾸면 됩니다.
+
+## 지원 기기
+- macOS 13+ (Apple silicon), Windows 10+ (x64)
+- iPadOS 17+, M1 이상 아이패드
+
+변경 이력은 [CHANGELOG.md](CHANGELOG.md).
+
 ## 라이선스
 AGPL-3.0

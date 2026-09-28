@@ -1,0 +1,15 @@
+# iOS 배포 빌드는 `cargo tauri ios build --debug` 경로를 씀: Xcode 27 Swift 가 release(-c release)에서 Tauri 의 @_cdecl 브리지(log_stdout 등)를
+# 로컬 심볼(t)로 숨겨 앱 링크 실패. debug 경로는 공개(T). 대신 dev 프로파일을 release 급으로 최적화해 엔진 속도는 동일.
+[profile.dev]
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+incremental = false
+codegen-units = 16
+[profile.dev.package."*"]
+opt-level = 3
+debug = false
+# swift-rs 는 빌드스크립트의 DEBUG(=해당 패키지 debuginfo 유무)로 Swift 구성을 고름 → tauri 만 line-tables 로 켜서 Swift=debug(심볼 공개) 유지
+[profile.dev.package.tauri]
+debug = "line-tables-only"

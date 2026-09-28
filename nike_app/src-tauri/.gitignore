@@ -1,2 +1,10 @@
 target/
-gen/
+gen/*
+!gen/apple/
+gen/apple/*
+!gen/apple/project.yml
+!gen/apple/ExportOptions.plist
+!gen/apple/nike_app_iOS/
+gen/apple/nike_app_iOS/*
+!gen/apple/nike_app_iOS/Info.plist
+!gen/apple/nike_app_iOS/*.entitlements
