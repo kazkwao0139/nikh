@@ -1,8 +1,13 @@
 name: build
-on: { push: { branches: [main] }, workflow_dispatch: {} }
+on:
+  push: { branches: [main], tags: ["v*"] }
+  workflow_dispatch: {}
+permissions: { contents: write }
 jobs:
   windows:
     runs-on: windows-latest
+    env:
+      HAS_SIGNPATH: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -19,9 +24,38 @@ jobs:
         with:
           projectPath: nike_app/src-tauri
           args: --bundles nsis
-      - uses: actions/upload-artifact@v4
+      - name: collect
+        shell: bash
+        run: |
+          mkdir -p out
+          cp nike_app/src-tauri/target/release/bundle/nsis/*.exe out/
+          cp nike_app/src-tauri/target/release/nike_app.exe out/
+          (cd out && sha256sum * > SHA256SUMS && cat SHA256SUMS)
+      - id: unsigned
+        uses: actions/upload-artifact@v4
+        with: { name: nikh-windows-unsigned, path: out/ }
+      # SignPath Foundation OSS 코드서명: 시크릿(SIGNPATH_API_TOKEN 등)이 있을 때만. 서명본은 별도 아티팩트.
+      - name: sign (SignPath)
+        if: env.HAS_SIGNPATH == 'true'
+        uses: signpath/github-action-submit-signing-request@v1
         with:
-          name: nike-windows
-          path: |
-            nike_app/src-tauri/target/release/bundle/nsis/*.exe
-            nike_app/src-tauri/target/release/nike_app.exe
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: nikh
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed/
+      - if: env.HAS_SIGNPATH == 'true'
+        uses: actions/upload-artifact@v4
+        with: { name: nikh-windows-signed, path: signed/ }
+      # 태그 푸시(v0.1.2 등)면 GitHub Release 에 서명본 첨부(서명 없으면 미서명 CI 빌드를 -ci 접미로)
+      - name: attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}; VER=${TAG#v}
+          if [ "$HAS_SIGNPATH" = "true" ]; then SRC=signed; NAME=NIKH-$VER-win64-setup.exe; else SRC=out; NAME=NIKH-$VER-win64-setup-ci.exe; fi
+          cp "$(ls $SRC/*setup.exe | head -1)" "$NAME"
+          gh release upload "$TAG" "$NAME" --clobber --repo "$GITHUB_REPOSITORY"
