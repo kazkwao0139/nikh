@@ -1,6 +1,6 @@
 # 변경 이력
 
-## 0.1.4 — 준비 중
+## 0.1.4 — 2026-09-30
 - CLI 정비: `nike search|pdf|packs|serve|mcp`, `--json`, 앱이 내려받은 팩·모델 자동 탐색. **MCP 서버**(`nike mcp`)로 Claude Code·Cursor 등 에이전트에서 search/pdf_facts/packs 도구 사용.
 - PDF 추출 강화: 파서 오류·패닉을 잡아 OCR로 폴백, 글리프가 깨진 PDF 감지, 영어 표제는 표제 줄만 인정(본문 속 언급·목차 제외). 미국 소송문서 560건 전수 확인.
 - iPadOS: 스캔본 OCR 지원(PDFKit + Vision, 기기 안), 핀치·더블탭으로 화면이 축소되던 문제 수정.
