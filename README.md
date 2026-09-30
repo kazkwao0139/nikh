@@ -1,11 +1,71 @@
 # NIKH
 
+[한국어 ↓](#한국어)
+
+Built over a weekend after getting fed up with case law and patent search. Probably nothing special.
+
+Describe your client's situation in plain sentences and the closest court decisions, administrative rulings, tribunal decisions and patent publications come back ranked by similarity.
+Offline · nothing generated · nothing logged. Downloads and details: https://nikh.hrmk.studio/en/
+
+## Layout
+- `nike_core/` — Rust engine. bge-m3 (ONNX, int8) query embedding, int8 mmap cosine search, pack v2 (zstd blocks, lazy load), rule-based tags (court level · outcome · statutes applied), statement-of-facts extraction from PDFs, OCR.
+- `nike_app/` — Tauri 2 app (macOS · Windows · iPadOS). Pack and update management, first-launch download.
+- `ui/` — single-file HTML front end (Korean / English).
+- `vendor/` — patched tao 0.37 and tauri-runtime-wry for iOS 27 (UIScene).
+
+The data packs and the collection / normalization / embedding pipeline are not in this repository.
+
+## Data
+U.S.: Harvard Caselaw Access Project and CourtListener, split into packs per state and era (a state runs 0.5–7GB across its eras; U.S. Supreme Court about 1GB). Korea: Korea National Law Information Center (case law, statutory interpretations, tribunal decisions, treaties, Patent Court) and KIPRIS patent publications. You download only the packs you pick; they never leave the machine.
+
+## Build
+```
+cargo tauri build --bundles dmg                       # macOS (from nike_app)
+./build_windows_on_mac.sh                              # Windows installer, cross-compiled on a Mac
+PATH=$HOME/.cargo/bin:$PATH cargo tauri ios build      # iPadOS
+```
+Fetch the search model (`data/onnx/bge-m3/model_int8.onnx`, `tokenizer.json`) from https://nike-data.hrmk.studio/onnx/bge-m3/ before building; it gets embedded in the app.
+
+The iPadOS build additionally needs the official onnxruntime-c 1.23 xcframework (full build with quantized operators) at `vendor/ort-ios/onnxruntime.xcframework` (see OTHER_LDFLAGS in `gen/apple/project.yml`). Signing team and bundle ID live in `tauri.conf.json` and `gen/apple/project.yml`.
+
+## Supported devices
+- macOS 13+ (Apple silicon), Windows 10+ (x64)
+- iPadOS 17+, M1 or later iPad
+
+Changes: [CHANGELOG.md](CHANGELOG.md).
+
+## CLI · MCP (use from agents)
+`nike_core` includes a command-line tool that runs without the app. If NIKH is installed and packs are downloaded, it uses those packs with no configuration (`NIKE_DATA` points it at another folder).
+```
+cargo build --release -p nike_core            # → nike_core/target/release/nike
+nike packs                                    # installed packs (JSON)
+nike search "Employee fired two weeks after filing a workers' compensation claim; retaliation, pretext" --mode us --k 10 --json
+nike search "임차인이 보증금을 돌려받기 전에 집을 비웠는데 임대인이 원상복구 비용을 공제했다" --json
+nike pdf complaint.pdf --json                 # extracts only the statement of facts (Korean: 청구원인·공소사실); OCR for scans
+nike serve 8791                               # web UI at http://localhost:8791
+nike mcp                                      # MCP server (stdio)
+```
+The MCP server exposes three tools: `search`, `pdf_facts`, `packs`. Claude Code:
+```
+claude mcp add nikh -- /absolute/path/nike mcp
+```
+Claude Desktop, Cursor and others: add `{"mcpServers": {"nikh": {"command": "/absolute/path/nike", "args": ["mcp"]}}}` to their config.
+
+NIKH itself still generates nothing and logs nothing, and every search finishes on this machine. But if you wire it to a cloud model (Claude, GPT, …), **your queries and results go to that model's provider — that is your choice**. If you handle client information, use it with a local model (Ollama etc.) or use the app.
+
+## License
+AGPL-3.0
+
+---
+
+## 한국어
+
 판례랑 특허 검색하다 빡쳐서 주말동안 만듦. 별 대단한건 아닐거임.
 
 의뢰인 상황을 문장으로 적으면 가장 비슷한 판례·해석례·심판례·특허 공보가 유사도 순으로 나옵니다.
 오프라인 · 생성 0 · 기록 0. 다운로드와 설명은 https://nikh.hrmk.studio
 
-## 구조
+### 구조
 - `nike_core/` — Rust 엔진. bge-m3(ONNX, int8) 쿼리 임베딩, int8 mmap 코사인 검색, 팩 v2(zstd 블록 지연 로드), 규칙 태그(심급·결과·적용 법률), PDF 사실관계 추출·OCR.
 - `nike_app/` — Tauri 2 앱(macOS · Windows · iPadOS). 팩·업데이트 관리, 첫 실행 다운로드.
 - `ui/` — 단일 HTML 프론트(한국어/English).
@@ -13,7 +73,7 @@
 
 데이터 팩과 수집·정규화·임베딩 파이프라인은 이 저장소에 없습니다.
 
-## 빌드
+### 빌드
 ```
 cargo tauri build --bundles dmg                       # macOS (nike_app 에서)
 ./build_windows_on_mac.sh                              # Windows 설치본, 맥에서 크로스 컴파일
@@ -23,13 +83,13 @@ PATH=$HOME/.cargo/bin:$PATH cargo tauri ios build      # iPadOS
 
 iPadOS 빌드는 추가로 공식 onnxruntime-c 1.23 xcframework(양자화 연산자 포함 전체 빌드)를 `vendor/ort-ios/onnxruntime.xcframework`에 두어야 합니다(`gen/apple/project.yml`의 OTHER_LDFLAGS 참조). 서명 팀·번들 ID는 `tauri.conf.json`과 `gen/apple/project.yml`에서 바꾸면 됩니다.
 
-## 지원 기기
+### 지원 기기
 - macOS 13+ (Apple silicon), Windows 10+ (x64)
 - iPadOS 17+, M1 이상 아이패드
 
 변경 이력은 [CHANGELOG.md](CHANGELOG.md).
 
-## CLI · MCP (에이전트에서 쓰기)
+### CLI · MCP (에이전트에서 쓰기)
 `nike_core`는 앱 없이도 도는 명령줄 도구를 포함합니다. NIKH 앱을 설치하고 팩을 내려받았다면 설정 없이 그 팩을 그대로 씁니다(`NIKE_DATA`로 다른 폴더 지정 가능).
 ```
 cargo build --release -p nike_core            # → nike_core/target/release/nike
@@ -48,5 +108,5 @@ Claude Desktop·Cursor 등은 설정에 `{"mcpServers": {"nikh": {"command": "/�
 
 NIKH 자체는 여전히 생성 0·기록 0이고 모든 검색은 이 기기 안에서 끝납니다. 다만 클라우드 모델(Claude, GPT 등)에 물리면 **검색어와 결과가 그 모델 제공사로 전송되는 건 사용자 선택**입니다. 의뢰인 정보를 다루면 로컬 모델(Ollama 등)과 함께 쓰거나 앱을 쓰세요.
 
-## 라이선스
+### 라이선스
 AGPL-3.0
