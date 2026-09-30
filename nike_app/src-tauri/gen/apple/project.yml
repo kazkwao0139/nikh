@@ -13,8 +13,8 @@ settingGroups:
       PRODUCT_NAME: NIKH
       PRODUCT_BUNDLE_IDENTIFIER: studio.hrmk.nike
       TARGETED_DEVICE_FAMILY: "2"
-      OTHER_LDFLAGS: "-lc++ -F/Users/chori/portfolio/SCRATCHPAD/caselaw/vendor/ort-ios/onnxruntime.xcframework/ios-arm64 -framework onnxruntime -framework CoreML -framework Accelerate -framework Foundation -framework UIKit"
-      OTHER_LDFLAGS[sdk=iphonesimulator*]: "-lc++ -F/Users/chori/portfolio/SCRATCHPAD/caselaw/vendor/ort-ios/onnxruntime.xcframework/ios-arm64_x86_64-simulator -framework onnxruntime -framework CoreML -framework Accelerate -framework Foundation -framework UIKit"
+      OTHER_LDFLAGS: "-lc++ -F/Users/chori/portfolio/SCRATCHPAD/caselaw/vendor/ort-ios/onnxruntime.xcframework/ios-arm64 -framework onnxruntime -framework CoreML -framework Accelerate -framework Foundation -framework UIKit -framework Vision -framework PDFKit"
+      OTHER_LDFLAGS[sdk=iphonesimulator*]: "-lc++ -F/Users/chori/portfolio/SCRATCHPAD/caselaw/vendor/ort-ios/onnxruntime.xcframework/ios-arm64_x86_64-simulator -framework onnxruntime -framework CoreML -framework Accelerate -framework Foundation -framework UIKit -framework Vision -framework PDFKit"
       DEVELOPMENT_TEAM: 7BBN65CNTB
 targetTemplates:
   app:

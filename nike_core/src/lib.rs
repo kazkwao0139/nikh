@@ -272,14 +272,21 @@ pub fn default_paths() -> (PathBuf, PathBuf) {
 
 /// 소장·공소장 PDF(텍스트 레이어) → 사실관계 구간. 스캔본(텍스트 없음)이면 Err. 생성 0: 문서 문장을 그대로 돌려줌.
 pub fn pdf_text(bytes: &[u8]) -> Result<String> {
-    let raw = pdf_extract::extract_text_from_mem(bytes).map_err(|e| anyhow::anyhow!("pdf: {e}"))?;
+    // pdf-extract 는 일부 PDF(cmap 손상 등)에서 패닉 → 잡아서 OCR 경로로 넘김(앱 크래시 방지)
+    let raw = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| pdf_extract::extract_text_from_mem(bytes))) {
+        Ok(Ok(t)) => t, Ok(Err(e)) => anyhow::bail!("pdf: {e}"), Err(_) => anyhow::bail!("NO_TEXT_LAYER") };
     let text: String = raw.lines().map(|l| l.trim_end()).collect::<Vec<_>>().join("\n");
-    if text.chars().filter(|c| !c.is_whitespace()).count() < 40 { anyhow::bail!("NO_TEXT_LAYER"); }
+    let vis: Vec<char> = text.chars().filter(|c| !c.is_whitespace()).collect();
+    if vis.len() < 40 { anyhow::bail!("NO_TEXT_LAYER"); }
+    // 텍스트 레이어는 있지만 글리프 매핑이 깨진 경우(˘ˇˆ…): 읽을 수 있는 문자 비율이 낮으면 스캔본으로 취급
+    let ok = vis.iter().filter(|c| c.is_alphanumeric() || ('가'..='힣').contains(c) || ".,;:()[]'\"-–—§$%/&*".contains(**c)).count();
+    if ok * 10 < vis.len() * 7 { anyhow::bail!("NO_TEXT_LAYER"); }
     Ok(text)
 }
 /// 스캔본 OCR (macOS: 동봉 Vision 헬퍼 nike_ocr). 임시 파일은 즉시 삭제.
 pub fn ocr_pdf(bytes: &[u8], helper: &Path) -> Result<String> {
     #[cfg(windows)] { let _ = helper; return ocr_pdf_windows(bytes); }   // Windows: WinRT(Windows.Media.Ocr + Windows.Data.Pdf), 별도 헬퍼 없음
+    #[cfg(target_os = "ios")] { let _ = helper; return ocr_pdf_ios(bytes); }   // iPadOS: 앱 안에서 PDFKit 렌더 + Vision 인식(헬퍼 프로세스 불가)
     #[allow(unreachable_code)]
     if !helper.exists() { anyhow::bail!("스캔본(텍스트 레이어 없음)입니다. 이 플랫폼엔 OCR 헬퍼가 없습니다."); }
     let tmp = std::env::temp_dir().join(format!("nike_ocr_{}.pdf", std::process::id())); std::fs::write(&tmp, bytes)?;
@@ -302,7 +309,17 @@ pub fn pdf_section_by_heading_en(text: &str) -> Result<Option<(String, String)>>
     let chars: Vec<char> = t.chars().collect(); let mut map = Vec::with_capacity(chars.len()); let mut sq: Vec<char> = Vec::with_capacity(chars.len());
     for (i, c) in chars.iter().enumerate() { if c.is_ascii_alphanumeric() { sq.push(c.to_ascii_uppercase()); map.push(i); } }
     let norm = |p: &str| -> Vec<char> { p.chars().filter(|c| c.is_ascii_alphanumeric()).map(|c| c.to_ascii_uppercase()).collect() };
-    let find = |pat: &str, from: usize| -> Option<usize> { let p = norm(pat); if p.is_empty() || sq.len() < p.len() { return None; } (from..=sq.len() - p.len()).find(|&i| sq[i..i + p.len()] == p[..]) };
+    // 표제 판정: 원문에서 그 위치 앞이 줄 시작(번호 'IV.' 'A.' '1.' '(a)' 허용)이고, 그 줄이 짧아야(≤80자) 함 → 본문 문장 속 언급은 제외
+    let is_heading = |i: usize, plen: usize| -> bool {
+        let a = map[i]; let mut k = a; while k > 0 && chars[k - 1] != '\n' { k -= 1; }
+        let pre: String = chars[k..a].iter().collect(); let pre = pre.trim();
+        let pre_ok = pre.is_empty() || Regex::new(r"^(?:[IVX]{1,5}\.?|[A-Z]\.|\d{1,2}\.|\(\w{1,3}\)|[A-Z]\))\s*$").map(|r| r.is_match(pre)).unwrap_or(false);
+        let end_i = map[i + plen - 1] + 1; let mut e = end_i;   // 표제 마지막 글자 바로 다음부터 줄 끝까지 while e < chars.len() && chars[e] != '\n' { e += 1; }
+        let line: String = chars[k..e].iter().collect(); let ahead: String = chars[e..(e + 300).min(chars.len())].iter().collect();
+        let toc = line.contains("....") || ahead.contains("....") || Regex::new(r"\s\d{1,3}\s*$").map(|r| r.is_match(line.trim_end())).unwrap_or(false);   // 목차 줄('Facts.' 다음 줄에 '...... 6') 제외
+        pre_ok && (e - k) <= 80 && !toc
+    };
+    let find = |pat: &str, from: usize| -> Option<usize> { let p = norm(pat); if p.is_empty() || sq.len() < p.len() { return None; } (from..=sq.len() - p.len()).find(|&i| sq[i..i + p.len()] == p[..] && is_heading(i, p.len())) };
     let cut = |start_pat: &[&str], end_pat: &[&str], label: &str| -> Option<(String, String)> {
         let st = start_pat.iter().filter_map(|p| find(p, 0).map(|i| i + norm(p).len())).min()?;
         let en = end_pat.iter().filter_map(|p| find(p, st + 40)).min().unwrap_or(sq.len());
@@ -311,7 +328,7 @@ pub fn pdf_section_by_heading_en(text: &str) -> Result<Option<(String, String)>>
         Some((label.to_string(), chars[a..b].iter().collect::<String>().trim().to_string()))
     };
     let counts = ["COUNT I", "COUNT ONE", "COUNT 1", "FIRST CAUSE OF ACTION", "FIRST CLAIM", "CLAIMS FOR RELIEF", "CAUSES OF ACTION", "CLAIM FOR RELIEF", "PRAYER FOR RELIEF", "WHEREFORE", "DEMAND FOR JURY TRIAL", "JURY DEMAND", "REQUEST FOR RELIEF"];
-    let r = cut(&["STATEMENT OF FACTS", "FACTUAL ALLEGATIONS", "FACTUAL BACKGROUND", "GENERAL ALLEGATIONS", "ALLEGATIONS COMMON TO ALL COUNTS", "STATEMENT OF THE FACTS", "FACTS COMMON TO ALL"], &counts, "Statement of Facts")   // 소장
+    let r = cut(&["STATEMENT OF FACTS", "FACTUAL ALLEGATIONS", "FACTUAL BACKGROUND", "GENERAL ALLEGATIONS", "ALLEGATIONS COMMON TO ALL COUNTS", "STATEMENT OF THE FACTS", "FACTS COMMON TO ALL", "FACTS", "BACKGROUND FACTS", "RELEVANT FACTS", "SUBSTANTIVE ALLEGATIONS"], &counts, "Statement of Facts")   // 소장
         .or_else(|| cut(&["THE GRAND JURY CHARGES", "THE GRAND JURY FURTHER CHARGES", "OVERT ACTS", "MANNER AND MEANS"], &["FORFEITURE ALLEGATION", "FORFEITURE", "A TRUE BILL", "FOREPERSON"], "Indictment"))   // 기소장
         .or_else(|| cut(&["STATEMENT OF THE CASE", "STATEMENT OF FACTS", "FACTUAL BACKGROUND", "BACKGROUND"], &["ARGUMENT", "LEGAL STANDARD", "STANDARD OF REVIEW", "DISCUSSION", "SUMMARY OF ARGUMENT", "LEGAL ANALYSIS"], "Statement of the Case"))   // 브리프·모션
         .or_else(|| cut(&["NATURE OF THE ACTION", "NATURE OF THE CASE", "PRELIMINARY STATEMENT"], &counts, "Nature of the Action"));   // 'ALLEGATIONS'·'COMPLAINT' 단독은 본문 언급과 구분 불가 → 위치 규칙(en_body_fallback)에 맡김
@@ -400,9 +417,10 @@ impl Engine {
     pub fn pdf_facts_smart(&mut self, bytes: &[u8]) -> Result<(String, String, Vec<(String, String, f32)>)> { self.pdf_facts_smart_ocr(bytes, None) }
     /// ocr_helper 가 있으면 텍스트 레이어 없는 PDF 를 OCR 로 읽음
     pub fn pdf_facts_smart_ocr(&mut self, bytes: &[u8], ocr_helper: Option<&Path>) -> Result<(String, String, Vec<(String, String, f32)>)> {
-        let mut ocr_used = false;
-        let text = match pdf_text(bytes) { Ok(t) => t, Err(e) if e.to_string() == "NO_TEXT_LAYER" => { ocr_used = true; ocr_pdf(bytes, ocr_helper.unwrap_or(Path::new("ocr/nike_ocr")))? } Err(e) => return Err(e) };
-        let (lab, body, detail) = self.facts_from_text(&text)?;
+        // 텍스트 레이어 추출 실패(스캔본·깨진 글리프·폰트 오류·파서 패닉) → 전부 OCR 로. 텍스트는 뽑혔는데 사실 구간을 못 찾으면 OCR 로 한 번 더(텍스트 레이어가 부분적인 스캔본).
+        let helper = ocr_helper.unwrap_or(Path::new("ocr/nike_ocr"));
+        let (text, mut ocr_used) = match pdf_text(bytes) { Ok(t) => (t, false), Err(e) => { let msg = e.to_string(); (ocr_pdf(bytes, helper).map_err(|oe| if msg == "NO_TEXT_LAYER" { oe } else { anyhow::anyhow!("{msg}; {oe}") })?, true) } };
+        let (lab, body, detail) = match self.facts_from_text(&text) { Ok(r) => r, Err(e) if !ocr_used => { let t2 = ocr_pdf(bytes, helper).map_err(|_| e)?; ocr_used = true; self.facts_from_text(&t2)? } Err(e) => return Err(e) };
         Ok((if ocr_used { format!("{lab} · OCR") } else { lab }, body, detail))
     }
     pub fn facts_from_text(&mut self, text: &str) -> Result<(String, String, Vec<(String, String, f32)>)> {
@@ -423,6 +441,60 @@ impl Engine {
         }
         if picked.is_empty() { anyhow::bail!("사실 서술 문단을 찾지 못했습니다(문단 {}개). 내용을 직접 붙여 넣어 주세요.", paras.len()); }
         let body: String = picked.join("\n"); Ok((format!("사실 문단 {}개(자동 분류)", picked.len()), body.chars().take(6000).collect(), detail))
+    }
+}
+
+
+/// iPadOS 내장 OCR: PDFKit 으로 페이지 렌더(2.5x) → Vision VNRecognizeTextRequest(한국어+영어, accurate) → 위→아래·좌→우 줄 정렬. 맥 헬퍼(nike_ocr.swift)와 동일 규칙, 전부 기기 안.
+#[cfg(target_os = "ios")]
+pub fn ocr_pdf_ios(bytes: &[u8]) -> Result<String> {
+    use objc2::{class, msg_send, runtime::{AnyObject, Bool}};
+    use objc2_foundation::{NSRect as CGRect, NSSize as CGSize, NSArray, NSData, NSString};
+    #[link(name = "PDFKit", kind = "framework")] unsafe extern "C" {}
+    #[link(name = "Vision", kind = "framework")] unsafe extern "C" {}
+    unsafe {
+        let data = NSData::with_bytes(bytes);
+        let doc: *mut AnyObject = msg_send![class!(PDFDocument), alloc]; let doc: *mut AnyObject = msg_send![doc, initWithData: &*data];
+        if doc.is_null() { anyhow::bail!("PDF 를 열 수 없습니다."); }
+        let n: usize = msg_send![doc, pageCount]; let mut out = String::new();
+        let langs = NSArray::from_retained_slice(&[NSString::from_str("ko-KR"), NSString::from_str("en-US")]);
+        for i in 0..n { objc2::rc::autoreleasepool(|_| {   // 페이지마다 풀: thumbnail/results 등 autorelease 객체 즉시 해제
+            let page: *mut AnyObject = msg_send![doc, pageAtIndex: i]; if page.is_null() { return; }
+            let b: CGRect = msg_send![page, boundsForBox: 0isize];   // kPDFDisplayBoxMediaBox
+            let size = CGSize { width: b.size.width * 2.5, height: b.size.height * 2.5 };
+            let img: *mut AnyObject = msg_send![page, thumbnailOfSize: size, forBox: 0isize];   // UIImage(흰 배경 렌더)
+            if img.is_null() { return; }
+            let cg: *mut std::ffi::c_void = msg_send![img, CGImage]; if cg.is_null() { return; }
+            let req: *mut AnyObject = msg_send![class!(VNRecognizeTextRequest), new];
+            let _: () = msg_send![req, setRecognitionLevel: 0isize];   // accurate
+            let _: () = msg_send![req, setRecognitionLanguages: &*langs];
+            let _: () = msg_send![req, setUsesLanguageCorrection: Bool::YES];
+            let opts: *mut AnyObject = msg_send![class!(NSDictionary), dictionary];
+            let handler: *mut AnyObject = msg_send![class!(VNImageRequestHandler), alloc]; let handler: *mut AnyObject = msg_send![handler, initWithCGImage: cg, options: opts];
+            let reqs: *mut AnyObject = msg_send![class!(NSArray), arrayWithObject: req];
+            let mut err: *mut AnyObject = std::ptr::null_mut(); let ok: Bool = msg_send![handler, performRequests: reqs, error: &mut err];
+            let mut items: Vec<(f64, f64, String)> = Vec::new();
+            if ok.as_bool() {
+                let results: *mut AnyObject = msg_send![req, results];
+                let cnt: usize = if results.is_null() { 0 } else { msg_send![results, count] };
+                for j in 0..cnt {
+                    let ob: *mut AnyObject = msg_send![results, objectAtIndex: j]; let bb: CGRect = msg_send![ob, boundingBox];
+                    let cands: *mut AnyObject = msg_send![ob, topCandidates: 1usize]; let c: *mut AnyObject = msg_send![cands, firstObject]; if c.is_null() { continue; }
+                    let s: *mut AnyObject = msg_send![c, string]; if s.is_null() { continue; }
+                    let text = (&*(s as *const NSString)).to_string();
+                    items.push((bb.origin.y + bb.size.height / 2.0, bb.origin.x, text));
+                }
+            }
+            let _: () = msg_send![handler, release]; let _: () = msg_send![req, release];
+            items.sort_by(|a, b| { if (a.0 - b.0).abs() > 0.008 { b.0.partial_cmp(&a.0).unwrap() } else { a.1.partial_cmp(&b.1).unwrap() } });   // 위→아래, 좌→우
+            let mut lines: Vec<String> = Vec::new(); let mut cur: Vec<String> = Vec::new(); let mut last_y = 2.0f64;
+            for (y, _x, t) in items { if (y - last_y).abs() > 0.008 { if !cur.is_empty() { lines.push(cur.join(" ")); } cur = Vec::new(); last_y = y; } cur.push(t); }
+            if !cur.is_empty() { lines.push(cur.join(" ")); }
+            out.push_str(&lines.join("\n")); out.push_str("\n\u{0C}\n");
+        }); }
+        let _: () = msg_send![doc, release];
+        if out.chars().filter(|c| !c.is_whitespace()).count() < 40 { anyhow::bail!("OCR로도 글자를 찾지 못했습니다."); }
+        Ok(out)
     }
 }
 

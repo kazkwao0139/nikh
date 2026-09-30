@@ -29,5 +29,24 @@ iPadOS 빌드는 추가로 공식 onnxruntime-c 1.23 xcframework(양자화 연�
 
 변경 이력은 [CHANGELOG.md](CHANGELOG.md).
 
+## CLI · MCP (에이전트에서 쓰기)
+`nike_core`는 앱 없이도 도는 명령줄 도구를 포함합니다. NIKH 앱을 설치하고 팩을 내려받았다면 설정 없이 그 팩을 그대로 씁니다(`NIKE_DATA`로 다른 폴더 지정 가능).
+```
+cargo build --release -p nike_core            # → nike_core/target/release/nike
+nike packs                                    # 설치된 팩 목록(JSON)
+nike search "임차인이 보증금을 돌려받기 전에 집을 비웠는데 임대인이 원상복구 비용을 공제했다" --k 10 --json
+nike search "Employee fired two weeks after filing a workers' compensation claim; retaliation, pretext" --mode us --json
+nike pdf 소장.pdf --json                       # 청구원인·공소사실(영문: statement of facts)만 추출, 스캔본은 OCR
+nike serve 8791                               # http://localhost:8791 웹 UI
+nike mcp                                      # MCP 서버(stdio)
+```
+MCP 서버는 `search`·`pdf_facts`·`packs` 세 도구를 냅니다. Claude Code:
+```
+claude mcp add nikh -- /절대경로/nike mcp
+```
+Claude Desktop·Cursor 등은 설정에 `{"mcpServers": {"nikh": {"command": "/절대경로/nike", "args": ["mcp"]}}}`.
+
+NIKH 자체는 여전히 생성 0·기록 0이고 모든 검색은 이 기기 안에서 끝납니다. 다만 클라우드 모델(Claude, GPT 등)에 물리면 **검색어와 결과가 그 모델 제공사로 전송되는 건 사용자 선택**입니다. 의뢰인 정보를 다루면 로컬 모델(Ollama 등)과 함께 쓰거나 앱을 쓰세요.
+
 ## 라이선스
 AGPL-3.0

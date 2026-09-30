@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>NIKH</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
+html,body{touch-action:pan-x pan-y}
+
 :root{--ink:#111;--mid:#666;--faint:#aaa;--line:#e6e6e6;--hi:#fff3b0;--acc:#111}
 *{box-sizing:border-box}html,body{height:100%}
 body{margin:0;background:#fff;color:var(--ink);font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;word-break:keep-all}
@@ -101,6 +103,8 @@ body:has(.home.up) footer{background:#fff;border-top:1px solid var(--line);paddi
 <div class="reader" id="reader"><div class="rbar"><button class="nav" id="rprev">← 이전</button><span id="rtitle"></span><button class="nav" id="rnext">다음 →</button><button class="nav" id="rcopy" title="본문을 드래그해 두면 그 문장과 출처를 함께 복사합니다">인용 복사</button><span id="rcopied" style="font-size:12px;color:var(--faint)"></span><button class="x" id="rclose" aria-label="닫기">×</button></div><div class="lineage" id="lineage"></div><div class="cols" id="cols"></div></div>
 <footer><span id="ready" style="font-size:11px;color:var(--faint)"></span><span id="gauge" style="display:none;width:220px;height:4px;border-radius:2px;background:var(--line);overflow:hidden"><span id="gaugeFill" style="display:block;height:100%;width:0;background:#111;transition:width .3s"></span></span><span id="pkopen" style="cursor:pointer;display:none;margin-bottom:6px;padding:3px 10px;border:1px solid var(--line);border-radius:12px;color:var(--ink)">데이터 팩 선택</span><span id="upd" style="cursor:pointer;display:none;margin:0 0 6px 8px;padding:3px 10px;border:1px solid #111;border-radius:12px;background:#111;color:#fff"></span><span id="footnote">결과는 판례 원문·메타·규칙 태그만 표시합니다. 요약·생성 없음 · 입력은 저장되지 않습니다</span><span id="joke" style="display:block;margin-top:6px;font-size:11px;color:var(--faint)"></span></footer>
 <script>
+document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});document.addEventListener('gesturechange',e=>e.preventDefault(),{passive:false});let __lt=0;document.addEventListener('touchend',e=>{const t=Date.now();if(t-__lt<300&&e.target&&!/INPUT|TEXTAREA|BUTTON|A/.test(e.target.tagName)){e.preventDefault();}__lt=t;},{passive:false});
+
 const $=s=>document.querySelector(s); const q=$('#q'), home=$('#home'), res=$('#res');
 const IS_TAURI=!!(window.__TAURI__&&window.__TAURI__.core); const IS_MOBILE=/iPad|iPhone|Android/.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.userAgent)); const inv=(c,a)=>window.__TAURI__.core.invoke(c,a||{});
 q.addEventListener('input',()=>{q.style.height='auto';q.style.height=Math.min(q.scrollHeight,200)+'px';});

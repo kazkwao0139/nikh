@@ -1,6 +1,6 @@
 [package]
 name = "nike_core"
-version = "0.1.0"
+version = "0.1.4"
 edition = "2021"
 description = "니케 검색 엔진 — bge-m3 ONNX 임베딩 + int8 코사인 + 규칙 태그. 생성 0, 서버 0, 로그 0."
 
@@ -31,3 +31,7 @@ codegen-units = 1
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = ["Data_Pdf", "Media_Ocr", "Graphics_Imaging", "Storage_Streams", "Foundation", "Foundation_Collections", "Globalization"] }
+
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["alloc", "std", "NSData", "NSString", "NSArray", "NSDictionary", "NSGeometry", "NSObject", "NSValue", "NSEnumerator", "objc2-core-foundation"] }
