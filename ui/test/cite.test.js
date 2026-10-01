@@ -2,7 +2,7 @@
 // js/cite.js 를 전역 스코프에 그대로 올리고(LANG·court 는 다른 파일 전역이라 여기서 대신 정의) 결과 문자열을 고정값과 비교
 const test = require('node:test'); const assert = require('node:assert/strict'); const fs = require('fs'); const path = require('path'); const vm = require('vm');
 const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'cite.js'), 'utf8');
-function load(lang) { const ctx = { LANG: lang, court: s => s || '', console }; vm.createContext(ctx); vm.runInContext(src, ctx); return ctx; }
+function load(lang) { const ctx = { LANG: lang, cleanCourt: s => s || '', console }; vm.createContext(ctx); vm.runInContext(src, ctx); return ctx; }
 
 test('fmtDate: 8·6·4자리, 단기(檀紀)→서기, Bluebook 영어', () => {
   const en = load('en'), ko = load('ko');
@@ -41,18 +41,18 @@ test('cite(미국): Bluebook — 법원 약어, 리포터가 법원을 특정하
   assert.equal(u('A v. B', '2015 NY Slip Op 01234', 'New York Supreme Court, Appellate Division', '20150201'), 'A v. B, 2015 NY Slip Op 01234 (N.Y. App. Div. 2015)');
 });
 
-test('bb(): 법원명 약어 표본 + 팩 법원명 718종 커버리지(건수 가중) ≥ 99.5%', () => {
+test('courtAbbr(): 법원명 약어 표본 + 팩 법원명 718종 커버리지(건수 가중) ≥ 99.5%', () => {
   const c = load('en');
-  for (const [n, want] of [['United States District Court for the District of Delaware', 'D. Del.'], ['United States Bankruptcy Court for the Eastern District of New York', 'Bankr. E.D.N.Y.'], ['Illinois Appellate Court', 'Ill. App. Ct.'], ['United States Court of Appeals for the Federal Circuit', 'Fed. Cir.'], ['New York Court of Appeals', 'N.Y.'], ['United States Court of Appeals for the Ninth', '9th Cir.'], ['County Court of New York, Nassau County', 'N.Y. Cnty. Ct.']]) assert.equal(c.bb(n), want, n);
+  for (const [n, want] of [['United States District Court for the District of Delaware', 'D. Del.'], ['United States Bankruptcy Court for the Eastern District of New York', 'Bankr. E.D.N.Y.'], ['Illinois Appellate Court', 'Ill. App. Ct.'], ['United States Court of Appeals for the Federal Circuit', 'Fed. Cir.'], ['New York Court of Appeals', 'N.Y.'], ['United States Court of Appeals for the Ninth', '9th Cir.'], ['County Court of New York, Nassau County', 'N.Y. Cnty. Ct.']]) assert.equal(c.courtAbbr(n), want, n);
   const rows = fs.readFileSync(path.join(__dirname, 'fixtures', 'us_courts.tsv'), 'utf8').trim().split('\n').map(l => { const [cnt, ...name] = l.split('\t'); return [+cnt, name.join('\t')]; });
-  let tot = 0, ok = 0; for (const [cnt, name] of rows) { tot += cnt; if (c.bb(name)) ok += cnt; }
+  let tot = 0, ok = 0; for (const [cnt, name] of rows) { tot += cnt; if (c.courtAbbr(name)) ok += cnt; }
   assert.ok(ok / tot >= 0.995, `coverage ${(100 * ok / tot).toFixed(2)}%`);
 });
 
-test('t6(): 사건명 단어 약어(Bluebook T6)', () => {
+test('partyAbbr(): 사건명 단어 약어(Bluebook PARTY_ABBR)', () => {
   const c = load('en');
-  assert.equal(c.t6('International Business Machines Corporation v. United States Department of Justice'), "Int'l Bus. Machs. Corp. v. United States Dep't of Justice");
-  assert.equal(c.t6('Smith v. Jones'), 'Smith v. Jones');
-  assert.equal(c.t6('In re Pacific Gas Company Shareholders Litigation'), "In re Pac. Gas Co. S'holders Litig.");
-  assert.equal(c.t6('NATIONAL ASSOCIATION OF MANUFACTURERS v. SEC'), "NAT'L ASS'N OF MANUFACTURERS v. SEC");
+  assert.equal(c.partyAbbr('International Business Machines Corporation v. United States Department of Justice'), "Int'l Bus. Machs. Corp. v. United States Dep't of Justice");
+  assert.equal(c.partyAbbr('Smith v. Jones'), 'Smith v. Jones');
+  assert.equal(c.partyAbbr('In re Pacific Gas Company Shareholders Litigation'), "In re Pac. Gas Co. S'holders Litig.");
+  assert.equal(c.partyAbbr('NATIONAL ASSOCIATION OF MANUFACTURERS v. SEC'), "NAT'L ASS'N OF MANUFACTURERS v. SEC");
 });

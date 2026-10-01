@@ -4,7 +4,7 @@ mod commands;
 mod packs;
 mod state;
 use crate::packs::{migrate_selected, swap_pending};
-use crate::state::{data_dir, ensure_engine, logline, App};
+use crate::state::{data_dir, ensure_engine, log_line, App};
 use std::{
     fs,
     sync::{Arc, Mutex},
@@ -20,7 +20,7 @@ pub fn run() {
             {
                 let dl = d.clone();
                 std::panic::set_hook(Box::new(move |info| {
-                    logline(&dl, format!("PANIC {info}"));
+                    log_line(&dl, format!("PANIC {info}"));
                 }));
             } // 로드 스레드 패닉 → 락 오염 → UI 무한 "여는 중" 진단용
             migrate_selected(&d);

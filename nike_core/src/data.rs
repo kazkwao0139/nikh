@@ -3,20 +3,20 @@ use anyhow::{anyhow, Result};
 use nike_core::{Engine, Hit};
 use std::path::PathBuf;
 
-pub(crate) fn home() -> PathBuf {
+pub(crate) fn home_dir() -> PathBuf {
     PathBuf::from(std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_default())
 }
 pub(crate) fn app_data_dir() -> PathBuf {
     if cfg!(target_os = "macos") {
-        home().join("Library/Application Support/studio.hrmk.nike")
+        home_dir().join("Library/Application Support/studio.hrmk.nike")
     } else if cfg!(windows) {
         PathBuf::from(std::env::var("APPDATA").unwrap_or_default()).join("studio.hrmk.nike")
     } else {
-        std::env::var("XDG_DATA_HOME").map(PathBuf::from).unwrap_or_else(|_| home().join(".local/share")).join("studio.hrmk.nike")
+        std::env::var("XDG_DATA_HOME").map(PathBuf::from).unwrap_or_else(|_| home_dir().join(".local/share")).join("studio.hrmk.nike")
     }
 }
 /// (팩 폴더들, 모델 폴더). 앱을 깔고 팩을 받아둔 사람은 아무 설정 없이 그대로 씀.
-pub(crate) fn resolve() -> Result<(Vec<PathBuf>, PathBuf, PathBuf)> {
+pub(crate) fn resolve_data() -> Result<(Vec<PathBuf>, PathBuf, PathBuf)> {
     let base = std::env::var("NIKE_DATA")
         .map(PathBuf::from)
         .ok()
@@ -60,7 +60,7 @@ pub(crate) fn resolve() -> Result<(Vec<PathBuf>, PathBuf, PathBuf)> {
         PathBuf::from("data/onnx/bge-m3"),
         PathBuf::from("onnx/bge-m3"),
         PathBuf::from("/Applications/NIKH.app/Contents/Resources/onnx/bge-m3"),
-        home().join("Applications/NIKH.app/Contents/Resources/onnx/bge-m3"),
+        home_dir().join("Applications/NIKH.app/Contents/Resources/onnx/bge-m3"),
     ];
     if let Ok(la) = std::env::var("LOCALAPPDATA") {
         cands.push(PathBuf::from(la).join("Programs/NIKH/onnx/bge-m3"));
@@ -75,8 +75,8 @@ pub(crate) fn resolve() -> Result<(Vec<PathBuf>, PathBuf, PathBuf)> {
     })?;
     Ok((packs, model, base))
 }
-pub(crate) fn load() -> Result<Engine> {
-    let (packs, model, _) = resolve()?;
+pub(crate) fn load_engine() -> Result<Engine> {
+    let (packs, model, _) = resolve_data()?;
     let t = std::time::Instant::now();
     let eng = Engine::load_packs(&packs, &model)?;
     let (nrec, nchunk) = eng.stats();
@@ -87,7 +87,7 @@ pub(crate) fn ocr_helper() -> Option<PathBuf> {
     ["ocr/nike_ocr", "/Applications/NIKH.app/Contents/Resources/ocr/nike_ocr"]
         .iter()
         .map(PathBuf::from)
-        .chain(std::iter::once(home().join("Applications/NIKH.app/Contents/Resources/ocr/nike_ocr")))
+        .chain(std::iter::once(home_dir().join("Applications/NIKH.app/Contents/Resources/ocr/nike_ocr")))
         .find(|p| p.exists())
 }
 pub(crate) fn hit_json(h: &Hit) -> serde_json::Value {
@@ -95,7 +95,7 @@ pub(crate) fn hit_json(h: &Hit) -> serde_json::Value {
         "matched_section": h.sec, "snippet": h.snippet.chars().take(600).collect::<String>(), "issue": h.issue.chars().take(800).collect::<String>(), "url": h.url, "kipris": h.kipris})
 }
 pub(crate) fn packs_json() -> Result<serde_json::Value> {
-    let (packs, model, base) = resolve()?;
+    let (packs, model, base) = resolve_data()?;
     let list: Vec<serde_json::Value> = packs
         .iter()
         .filter_map(|p| {

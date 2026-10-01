@@ -39,7 +39,7 @@ pub(crate) fn model_dir(app: &tauri::AppHandle, data: &Path) -> PathBuf {
 
 /// iOS 메모리 계측: (실사용 phys_footprint MB, 남은 허용량 MB). 진단 로그용.
 #[cfg(target_os = "ios")]
-pub(crate) fn mem_mb() -> (u64, u64) {
+pub(crate) fn memory_mb() -> (u64, u64) {
     extern "C" {
         fn os_proc_available_memory() -> usize;
     }
@@ -49,16 +49,16 @@ pub(crate) fn mem_mb() -> (u64, u64) {
     (if ok { ri.ri_phys_footprint / 1_000_000 } else { 0 }, avail)
 }
 #[cfg(not(target_os = "ios"))]
-pub(crate) fn mem_mb() -> (u64, u64) {
+pub(crate) fn memory_mb() -> (u64, u64) {
     (0, 0)
 }
-pub(crate) fn logline(data: &Path, msg: String) {
+pub(crate) fn log_line(data: &Path, msg: String) {
     // 진단 로그: 데이터 폴더의 nike.log (질의 내용은 기록하지 않음)
     if let Ok(mut f) = fs::OpenOptions::new().create(true).append(true).open(data.join("nike.log")) {
-        let _ = writeln!(f, "{} {}", chrono_like(), msg);
+        let _ = writeln!(f, "{} {}", log_timestamp(), msg);
     }
 }
-pub(crate) fn chrono_like() -> String {
+pub(crate) fn log_timestamp() -> String {
     let s = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
     format!("[t={}]", s)
 }
@@ -90,10 +90,10 @@ pub(crate) fn ensure_engine(app: &tauri::AppHandle, st: &State<App>) -> Result<(
         return Err("설치된 데이터 팩이 없습니다. 설정에서 팩을 선택해 내려받으세요.".into());
     }
     {
-        let (fp, av) = mem_mb();
-        logline(&st.data, format!("mem before load: footprint {fp}MB avail {av}MB"));
+        let (fp, av) = memory_mb();
+        log_line(&st.data, format!("mem before load: footprint {fp}MB avail {av}MB"));
     }
-    logline(
+    log_line(
         &st.data,
         format!(
             "load start packs={:?} model={:?}",
@@ -102,21 +102,21 @@ pub(crate) fn ensure_engine(app: &tauri::AppHandle, st: &State<App>) -> Result<(
         ),
     );
     let prog = |done: usize, total: usize, key: &str| {
-        logline(&st.data, format!("load stage {done}/{total} {key}"));
+        log_line(&st.data, format!("load stage {done}/{total} {key}"));
         if let Ok(mut p) = st.progress.lock() {
             *p = ("load".into(), done as u64, total as u64, key.to_string());
         }
     };
     let eng = Engine::load_packs_with(&dirs, &model, &prog).map_err(|e| {
-        logline(&st.data, format!("load FAILED {e}"));
+        log_line(&st.data, format!("load FAILED {e}"));
         format!("엔진 로드 실패: {e}")
     })?;
     let (r, c) = eng.stats();
-    logline(&st.data, format!("load done recs={} chunks={} in {:.1}s", r, c, t0.elapsed().as_secs_f32()));
+    log_line(&st.data, format!("load done recs={} chunks={} in {:.1}s", r, c, t0.elapsed().as_secs_f32()));
     let mut eng = eng;
     let t2 = std::time::Instant::now();
     let _ = eng.warm();
-    logline(&st.data, format!("onnx warm in {:.2}s", t2.elapsed().as_secs_f32()));
+    log_line(&st.data, format!("onnx warm in {:.2}s", t2.elapsed().as_secs_f32()));
     *g = Some(eng);
     drop(g); // 여기서부터 검색 가능
              // 임베딩 파일 페이지-인은 락 없이 뒤에서: 게이지 "캐시 n%" (검색을 막지 않음)
@@ -136,8 +136,8 @@ pub(crate) fn ensure_engine(app: &tauri::AppHandle, st: &State<App>) -> Result<(
         if let Ok(mut p) = pr.lock() {
             *p = ("ready".into(), 1, 1, String::new());
         }
-        let (fp, av) = mem_mb();
-        logline(&data, format!("file warm done in {:.1}s · mem footprint {fp}MB avail {av}MB", t3.elapsed().as_secs_f32()));
+        let (fp, av) = memory_mb();
+        log_line(&data, format!("file warm done in {:.1}s · mem footprint {fp}MB avail {av}MB", t3.elapsed().as_secs_f32()));
     });
     Ok(())
 }

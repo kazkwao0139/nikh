@@ -1,6 +1,6 @@
 //! Tauri 커맨드 — UI 가 invoke 로 부르는 함수들. 검색·상태·팩 목록/다운로드/삭제/선택·모델 다운로드·링크 열기·앱 업데이트 확인·PDF 사실관계.
 use crate::packs::{excluded_keys, manifest_any, manifest_remote, mobile_blocked, sha256_file, swap_pending, sync_file, Ev, MANIFEST_URL};
-use crate::state::{ensure_engine, logline, model_dir, App};
+use crate::state::{ensure_engine, log_line, model_dir, App};
 use nike_core::Engine;
 use serde::Serialize;
 use std::{
@@ -294,7 +294,7 @@ pub async fn search(
     let f = filter.as_deref().and_then(|s| s.split_once('=')).map(|(a, b)| (a.to_string(), b.to_string()));
     let t1 = std::time::Instant::now();
     let hits = eng.search_mode(&q, k.clamp(1, 200), f.as_ref().map(|(a, b)| (a.as_str(), b.as_str())), mode.as_deref()).map_err(|e| e.to_string())?;
-    logline(&st.data, format!("search k={} hits={} in {}ms (질의 길이 {}자)", k, hits.len(), t1.elapsed().as_millis(), q.chars().count()));
+    log_line(&st.data, format!("search k={} hits={} in {}ms (질의 길이 {}자)", k, hits.len(), t1.elapsed().as_millis(), q.chars().count()));
     Ok(serde_json::json!({ "rows": hits, "loaded": eng.loaded }))
 }
 
@@ -337,7 +337,7 @@ pub async fn prewarm(mode: String, st: State<'_, App>) -> Result<(), String> {
     std::thread::spawn(move || {
         let t = std::time::Instant::now();
         Engine::warm_files(&dirs, &|_, _| {});
-        logline(&data, format!("prewarm {} done in {:.1}s", mode, t.elapsed().as_secs_f32()));
+        log_line(&data, format!("prewarm {} done in {:.1}s", mode, t.elapsed().as_secs_f32()));
     });
     Ok(())
 }

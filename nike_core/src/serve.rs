@@ -1,11 +1,11 @@
 //! 로컬 웹 서버 — ui/(index.html·app.css·js/) + /api/search·/api/loaded. 127.0.0.1 전용.
-use crate::data::{load, resolve};
+use crate::data::{load_engine, resolve_data};
 use anyhow::Result;
 use std::io::{Read, Write};
 use std::path::Path;
 
 pub(crate) fn serve(port: u16) -> Result<()> {
-    let mut eng = load()?;
+    let mut eng = load_engine()?;
     let ui_dir = std::env::var("NIKE_UI").unwrap_or_else(|_| "ui".into());
     let listener = std::net::TcpListener::bind(("127.0.0.1", port))?;
     eprintln!("NIKH → http://localhost:{port}/");
@@ -17,7 +17,7 @@ pub(crate) fn serve(port: u16) -> Result<()> {
         let path = req.split_whitespace().nth(1).unwrap_or("/").to_string();
         let (ctype, body): (&str, Vec<u8>) = if path.starts_with("/api/loaded") {
             let keys: Vec<String> =
-                resolve().map(|(p, _, _)| p.iter().filter_map(|d| d.file_name().map(|n| n.to_string_lossy().to_string())).collect()).unwrap_or_default();
+                resolve_data().map(|(p, _, _)| p.iter().filter_map(|d| d.file_name().map(|n| n.to_string_lossy().to_string())).collect()).unwrap_or_default();
             ("application/json; charset=utf-8", serde_json::to_vec(&serde_json::json!({"loaded": keys}))?)
         } else if path.starts_with("/api/search") {
             let qs: std::collections::HashMap<String, String> = path

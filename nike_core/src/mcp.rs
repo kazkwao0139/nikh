@@ -1,5 +1,5 @@
 //! MCP 서버(stdio) — 줄 단위 JSON-RPC 2.0. 도구 search·pdf_facts·packs. 엔진은 첫 호출 때 로드. stdout 은 프로토콜 전용, 로그는 stderr.
-use crate::data::{hit_json, load, ocr_helper, packs_json};
+use crate::data::{hit_json, load_engine, ocr_helper, packs_json};
 use anyhow::Result;
 use nike_core::Engine;
 use std::io::{BufRead, Write};
@@ -56,7 +56,7 @@ pub(crate) fn mcp() -> Result<()> {
                         let k = a.get("k").and_then(|v| v.as_u64()).unwrap_or(10).clamp(1, 100) as usize;
                         let mode = a.get("mode").and_then(|v| v.as_str()).map(|s| s.to_string());
                         if eng.is_none() {
-                            eng = Some(load().map_err(|e| e.to_string())?);
+                            eng = Some(load_engine().map_err(|e| e.to_string())?);
                         }
                         let e = eng.as_mut().unwrap();
                         let hits = e.search_mode(&q, k, None, mode.as_deref()).map_err(|e| e.to_string())?;
@@ -66,7 +66,7 @@ pub(crate) fn mcp() -> Result<()> {
                         let p = a.get("path").and_then(|v| v.as_str()).ok_or("path is required")?;
                         let b = std::fs::read(p).map_err(|e| format!("read {p}: {e}"))?;
                         if eng.is_none() {
-                            eng = Some(load().map_err(|e| e.to_string())?);
+                            eng = Some(load_engine().map_err(|e| e.to_string())?);
                         }
                         let e = eng.as_mut().unwrap();
                         let (lab, body, _) = e.pdf_facts_smart_ocr(&b, ocr_helper().as_deref()).map_err(|e| e.to_string())?;

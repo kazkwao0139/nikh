@@ -8,12 +8,12 @@
 mod data;
 mod mcp;
 mod serve;
-use crate::data::{hit_json, load, ocr_helper, packs_json};
+use crate::data::{hit_json, load_engine, ocr_helper, packs_json};
 use crate::mcp::mcp;
 use crate::serve::serve;
 use anyhow::{anyhow, Result};
 
-fn arg_val(args: &[String], name: &str) -> Option<String> {
+fn arg_value(args: &[String], name: &str) -> Option<String> {
     args.iter().position(|a| a == name).and_then(|i| args.get(i + 1).cloned())
 }
 
@@ -35,7 +35,7 @@ fn main() -> Result<()> {
         "pdf" | "--pdf" => {
             let json = args.iter().any(|a| a == "--json");
             let path = args.iter().skip(1).find(|a| !a.starts_with("--")).ok_or_else(|| anyhow!("pdf 파일 경로"))?;
-            let mut eng = load()?;
+            let mut eng = load_engine()?;
             let b = std::fs::read(path)?;
             let (lab, body, detail) = eng.pdf_facts_smart_ocr(&b, ocr_helper().as_deref())?;
             if json {
@@ -59,9 +59,9 @@ fn main() -> Result<()> {
                         })
                         .cloned()
                         .ok_or_else(|| anyhow!("검색어"))?,
-                    arg_val(&args, "--k").and_then(|x| x.parse().ok()).unwrap_or(10usize),
-                    arg_val(&args, "--mode"),
-                    arg_val(&args, "--filter"),
+                    arg_value(&args, "--k").and_then(|x| x.parse().ok()).unwrap_or(10usize),
+                    arg_value(&args, "--mode"),
+                    arg_value(&args, "--filter"),
                     args.iter().any(|a| a == "--json"),
                 )
             } else {
@@ -73,7 +73,7 @@ fn main() -> Result<()> {
                     false,
                 )
             };
-            let mut eng = load()?;
+            let mut eng = load_engine()?;
             let f = filter.as_deref().and_then(|s| s.split_once('=')).map(|(a, b)| (a.to_string(), b.to_string()));
             let t = std::time::Instant::now();
             let hits = eng.search_mode(&q, k, f.as_ref().map(|(a, b)| (a.as_str(), b.as_str())), mode.as_deref())?;

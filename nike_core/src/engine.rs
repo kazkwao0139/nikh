@@ -24,7 +24,7 @@ struct Chunk {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct Rec {
+pub struct Record {
     pub id: String,
     #[serde(rename = "사건명", default)]
     pub title: String,
@@ -65,7 +65,7 @@ pub struct Rec {
 }
 
 /// 레코드 id → 원문 링크 (판례는 순수 번호, 나머지는 '접두:번호')
-pub fn url_of(id: &str, r: &Rec) -> String {
+pub fn source_url(id: &str, r: &Record) -> String {
     if let Some(u) = &r.url {
         return u.clone();
     }
@@ -120,25 +120,25 @@ pub struct Hit {
     pub kipris: Option<String>,
 }
 
-struct PackMem {
+struct PackData {
     emb: Mmap,
     scale: Vec<f32>,
     n: usize,
     key: String,
-    recs: Option<ZStore>,
-    chunks: Option<ZStore>,
+    recs: Option<ZstdStore>,
+    chunks: Option<ZstdStore>,
     texts: Vec<String>,
 } // texts: v1 팩만(팩 내부 인덱스)
 
 /// v2 텍스트 저장소: zstd 블록 mmap + 블록 표. 마지막 블록 1개 캐시. 검색엔 안 쓰이고 표시할 때만 해제.
-pub struct ZStore {
+pub struct ZstdStore {
     mmap: Mmap,
     blocks: Vec<(u64, u64)>,
     cache: std::sync::Mutex<Option<(u32, Vec<u8>)>>,
 }
-impl ZStore {
+impl ZstdStore {
     fn open(zst: &Path, blocks: Vec<(u64, u64)>) -> Result<Self> {
-        Ok(ZStore { mmap: unsafe { Mmap::map(&File::open(zst)?)? }, blocks, cache: std::sync::Mutex::new(None) })
+        Ok(ZstdStore { mmap: unsafe { Mmap::map(&File::open(zst)?)? }, blocks, cache: std::sync::Mutex::new(None) })
     }
     fn get(&self, block: u32, off: u32, len: u32) -> String {
         let mut c = self.cache.lock().unwrap();
@@ -153,17 +153,17 @@ impl ZStore {
     }
 }
 #[derive(Deserialize)]
-struct RecIdx {
+struct RecordIndex {
     blocks: Vec<(u64, u64)>,
     items: Vec<(String, u32, u32, u32)>,
 }
 #[derive(Deserialize)]
-struct ChunkIdx {
+struct ChunkIndex {
     blocks: Vec<(u64, u64)>,
     items: Vec<(String, String, u32, u32, u32)>,
 }
 #[derive(Clone, Copy)]
-struct Pos {
+struct BlockPos {
     pack: u16,
     block: u32,
     off: u32,
@@ -182,13 +182,13 @@ fn pack_in_mode(key: &str, mode: Option<&str>) -> bool {
 pub struct Engine {
     n: usize,
     dim: usize,
-    packs: Vec<PackMem>, // 도메인별 팩 (int8 n_k×dim), 청크 배열은 팩 순서로 이어 붙임
+    packs: Vec<PackData>, // 도메인별 팩 (int8 n_k×dim), 청크 배열은 팩 순서로 이어 붙임
     pub loaded: Vec<String>,
     chunk_id: Vec<String>,
     chunk_sec: Vec<String>,
-    chunk_pos: Vec<Option<Pos>>,                                // v2 팩: 청크 텍스트 위치
-    rec_pos: HashMap<String, Pos>,                              // v2 팩: 원본 레코드 위치 (전문·요지는 여기서 지연 로드)
-    recs: HashMap<String, Rec>,                                 // v1: 전체 / v2: meta (전문 없음)
+    chunk_pos: Vec<Option<BlockPos>>,                           // v2 팩: 청크 텍스트 위치
+    rec_pos: HashMap<String, BlockPos>,                         // v2 팩: 원본 레코드 위치 (전문·요지는 여기서 지연 로드)
+    recs: HashMap<String, Record>,                              // v1: 전체 / v2: meta (전문 없음)
     by_no: HashMap<String, String>,                             // 사건번호(공백 제거) → id
     prev_of: HashMap<String, (Option<String>, Option<String>)>, // id → (원심 사건번호, 원심 표기)
     next_of: HashMap<String, String>,
@@ -197,7 +197,7 @@ pub struct Engine {
     re_first: Regex,
 }
 
-fn caseno_key(s: &str) -> String {
+fn case_number_key(s: &str) -> String {
     s.split(',').next().unwrap_or("").chars().filter(|c| !c.is_whitespace()).collect()
 }
 
@@ -218,10 +218,10 @@ impl Engine {
         let mut chunk_id = Vec::new();
         let mut chunk_sec = Vec::new();
         let mut v1_texts: Vec<String> = Vec::new();
-        let mut recs: HashMap<String, Rec> = HashMap::new();
+        let mut recs: HashMap<String, Record> = HashMap::new();
         let mut loaded = Vec::new();
-        let mut chunk_pos: Vec<Option<Pos>> = Vec::new();
-        let mut rec_pos: HashMap<String, Pos> = HashMap::new();
+        let mut chunk_pos: Vec<Option<BlockPos>> = Vec::new();
+        let mut rec_pos: HashMap<String, BlockPos> = HashMap::new();
         for (pi, pack) in packs.iter().enumerate() {
             progress(pi, packs.len(), &pack.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default());
             let meta: serde_json::Value = serde_json::from_reader(File::open(pack.join("meta.json"))?)?;
@@ -238,37 +238,37 @@ impl Engine {
             let key = meta["key"].as_str().unwrap_or("pack").to_string();
             let (rstore, cstore) = if pack.join("meta.jsonl").exists() {
                 // v2: 텍스트는 zstd 블록, 메타만 상주
-                let ci: ChunkIdx = serde_json::from_reader(BufReader::new(File::open(pack.join("chunks.idx"))?))?;
+                let ci: ChunkIndex = serde_json::from_reader(BufReader::new(File::open(pack.join("chunks.idx"))?))?;
                 anyhow::ensure!(ci.items.len() == n, "chunks.idx size mismatch in {:?}", pack);
                 for (i, s_, b, o, l) in ci.items {
                     chunk_id.push(i);
                     chunk_sec.push(s_);
-                    chunk_pos.push(Some(Pos { pack: pi as u16, block: b, off: o, len: l }));
+                    chunk_pos.push(Some(BlockPos { pack: pi as u16, block: b, off: o, len: l }));
                 }
-                let ri: RecIdx = serde_json::from_reader(BufReader::new(File::open(pack.join("recs.idx"))?))?;
+                let ri: RecordIndex = serde_json::from_reader(BufReader::new(File::open(pack.join("recs.idx"))?))?;
                 for (i, b, o, l) in ri.items {
-                    rec_pos.insert(i, Pos { pack: pi as u16, block: b, off: o, len: l });
+                    rec_pos.insert(i, BlockPos { pack: pi as u16, block: b, off: o, len: l });
                 }
                 for line in BufReader::new(File::open(pack.join("meta.jsonl"))?).lines() {
-                    let r: Rec = serde_json::from_str(&line?)?;
+                    let r: Record = serde_json::from_str(&line?)?;
                     recs.insert(r.id.clone(), r);
                 }
-                (Some(ZStore::open(&pack.join("recs.zst"), ri.blocks)?), Some(ZStore::open(&pack.join("chunks.zst"), ci.blocks)?))
+                (Some(ZstdStore::open(&pack.join("recs.zst"), ri.blocks)?), Some(ZstdStore::open(&pack.join("chunks.zst"), ci.blocks)?))
             } else {
                 let chunks: Vec<Chunk> = serde_json::from_reader(BufReader::new(File::open(pack.join("chunks.json"))?))?;
                 for (li, c) in chunks.into_iter().enumerate() {
                     chunk_id.push(c.i);
                     chunk_sec.push(c.s);
                     v1_texts.push(c.t);
-                    chunk_pos.push(Some(Pos { pack: pi as u16, block: li as u32, off: 0, len: 0 }));
+                    chunk_pos.push(Some(BlockPos { pack: pi as u16, block: li as u32, off: 0, len: 0 }));
                 } // v1: block = 팩 내부 인덱스
                 for line in BufReader::new(File::open(pack.join("recs.jsonl"))?).lines() {
-                    let r: Rec = serde_json::from_str(&line?)?;
+                    let r: Record = serde_json::from_str(&line?)?;
                     recs.insert(r.id.clone(), r);
                 }
                 (None, None)
             };
-            mems.push(PackMem { emb, scale, n, key: key.clone(), recs: rstore, chunks: cstore, texts: std::mem::take(&mut v1_texts) });
+            mems.push(PackData { emb, scale, n, key: key.clone(), recs: rstore, chunks: cstore, texts: std::mem::take(&mut v1_texts) });
             loaded.push(key);
         }
         let n: usize = mems.iter().map(|p| p.n).sum();
@@ -278,7 +278,7 @@ impl Engine {
         let mut by_no = HashMap::new();
         let mut prev_of = HashMap::new();
         for (id, r) in &recs {
-            by_no.insert(caseno_key(&r.caseno), id.clone());
+            by_no.insert(case_number_key(&r.caseno), id.clone());
             let (pno, ptxt) = if r.prev_txt.is_some() || r.prev_no.is_some() {
                 (r.prev_no.clone(), r.prev_txt.clone())
             } else {
@@ -354,7 +354,7 @@ impl Engine {
         Ok(v)
     }
 
-    fn scores(&self, v: &[f32], mode: Option<&str>) -> Vec<f32> {
+    fn cosine_scores(&self, v: &[f32], mode: Option<&str>) -> Vec<f32> {
         let dim = self.dim;
         let mut out = Vec::with_capacity(self.n);
         for p in &self.packs {
@@ -383,7 +383,7 @@ impl Engine {
     /// mode: Some("patent") = 특허 팩만, Some("case") = 특허 제외, None = 전부
     pub fn search_mode(&mut self, q: &str, k: usize, filter: Option<(&str, &str)>, mode: Option<&str>) -> Result<Vec<Hit>> {
         let v = self.embed(q)?;
-        let s = self.scores(&v, mode);
+        let s = self.cosine_scores(&v, mode);
         let mut order: Vec<usize> = (0..self.n).collect();
         // 상위 k*6 판례만 필요 → 부분 정렬
         let take = (k * 8).min(self.n);
@@ -436,7 +436,7 @@ impl Engine {
                 sec: self.chunk_sec[i].clone(),
                 snippet: self.chunk_text(i).chars().take(400).collect(),
                 issue: r.issue.clone(),
-                url: url_of(&id, r),
+                url: source_url(&id, r),
                 kipris: r.kipris.clone(),
                 chain: if id.contains(':') && !id.starts_with("cap:") { vec![] } else { self.chain_of(&id) },
             });
@@ -461,7 +461,7 @@ impl Engine {
         }
     }
     /// 원본 레코드 전체(전문·요지 포함): v2 는 recs.zst 에서 지연 해제
-    pub fn full_rec(&self, id: &str) -> Option<Rec> {
+    pub fn full_record(&self, id: &str) -> Option<Record> {
         if let Some(p) = self.rec_pos.get(id) {
             let s = self.packs[p.pack as usize].recs.as_ref()?.get(p.block, p.off, p.len);
             return serde_json::from_str(&s).ok();
@@ -483,7 +483,7 @@ impl Engine {
             if out.len() >= 4 || out.iter().any(|o: &ChainNode| o.id == c) {
                 break;
             }
-            let r = match self.full_rec(&c) {
+            let r = match self.full_record(&c) {
                 Some(r) => r,
                 None => break,
             };
@@ -508,7 +508,7 @@ impl Engine {
                 prev_missing: pno.as_ref().map(|p| !self.by_no.contains_key(p)).unwrap_or(false),
                 prev_text: ptxt,
                 first_text: first_txt,
-                url: url_of(&c, &r),
+                url: source_url(&c, &r),
             });
             cur = self.next_of.get(&c).cloned();
         }
