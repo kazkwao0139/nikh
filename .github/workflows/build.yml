@@ -12,13 +12,13 @@ jobs:
         with: { components: "rustfmt, clippy" }
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: "nike_core -> target" }
-      - name: rustfmt (rustfmt.toml: max_width 160)
+      - name: "rustfmt (rustfmt.toml: max_width 160)"
         run: cargo fmt --manifest-path nike_core/Cargo.toml --all -- --check && cargo fmt --manifest-path nike_app/src-tauri/Cargo.toml --all -- --check
-      - name: clippy (nike_core, 경고 = 실패)
+      - name: "clippy (nike_core, warnings = error)"
         run: cargo clippy --manifest-path nike_core/Cargo.toml --all-targets -- -D warnings
       - uses: actions/setup-node@v4
         with: { node-version: "22" }
-      - name: ui tests (인용 복사·날짜·Bluebook 약어)
+      - name: "ui tests (citation copy, dates, Bluebook abbreviations)"
         run: node --test ui/test/*.test.js
   windows:
     runs-on: windows-latest
