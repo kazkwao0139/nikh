@@ -99,6 +99,14 @@ pub(crate) fn swap_pending(packs_dir: &PathBuf) {
         }
     }
 }
+/// packs 폴더에서 meta.json 이 있는 하위 폴더 이름(= 팩 키). 정렬·.tmp/.old 제외는 호출 쪽에서.
+pub(crate) fn installed_pack_keys(packs_dir: &Path) -> std::io::Result<Vec<String>> {
+    Ok(fs::read_dir(packs_dir)?
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().join("meta.json").exists())
+        .map(|e| e.file_name().to_string_lossy().to_string())
+        .collect())
+}
 /// selected.json(옛 형식: 켤 팩 목록) → excluded.json 1회 이전
 pub(crate) fn migrate_selected(data: &Path) {
     let sel = data.join("selected.json");
@@ -107,9 +115,7 @@ pub(crate) fn migrate_selected(data: &Path) {
         return;
     }
     let Some(keys) = fs::read_to_string(&sel).ok().and_then(|s| serde_json::from_str::<Vec<String>>(&s).ok()) else { return };
-    let installed: Vec<String> = fs::read_dir(data.join("packs"))
-        .map(|it| it.filter_map(|e| e.ok()).filter(|e| e.path().join("meta.json").exists()).map(|e| e.file_name().to_string_lossy().to_string()).collect())
-        .unwrap_or_default();
+    let installed: Vec<String> = installed_pack_keys(&data.join("packs")).unwrap_or_default();
     let excluded: Vec<String> = installed.into_iter().filter(|k| !keys.contains(k)).collect();
     let _ = fs::write(&ex, serde_json::to_string(&excluded).unwrap_or_default());
     let _ = fs::rename(&sel, data.join("selected.json.migrated"));

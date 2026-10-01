@@ -1,5 +1,5 @@
 //! 앱 상태 — 데이터·모델 폴더, 엔진 로드(ensure_engine)·워밍업, 진단 로그(질의 내용 기록 없음), iOS 메모리 계측.
-use crate::packs::{excluded_keys, mobile_blocked};
+use crate::packs::{excluded_keys, installed_pack_keys, mobile_blocked};
 use nike_core::Engine;
 use std::{
     fs,
@@ -74,12 +74,7 @@ pub(crate) fn ensure_engine(app: &tauri::AppHandle, st: &State<App>) -> Result<(
     let packs_dir = st.data.join("packs");
     if packs_dir.exists() {
         let ex = excluded_keys(&st.data);
-        let mut keys: Vec<String> = fs::read_dir(&packs_dir)
-            .map_err(|e| e.to_string())?
-            .filter_map(|e| e.ok())
-            .filter(|e| e.path().join("meta.json").exists())
-            .map(|e| e.file_name().to_string_lossy().to_string())
-            .collect();
+        let mut keys: Vec<String> = installed_pack_keys(&packs_dir).map_err(|e| e.to_string())?;
         keys.sort();
         keys.retain(|k| !ex.contains(k) && !mobile_blocked(k));
         dirs = keys.iter().map(|k| packs_dir.join(k)).collect();
@@ -140,4 +135,25 @@ pub(crate) fn ensure_engine(app: &tauri::AppHandle, st: &State<App>) -> Result<(
         log_line(&data, format!("file warm done in {:.1}s · mem footprint {fp}MB avail {av}MB", t3.elapsed().as_secs_f32()));
     });
     Ok(())
+}
+
+/// 엔진을 백그라운드에서 (재)로드. status 를 "loading" 으로 돌려놓고 시작, 실패하면 "error: …" 를 남겨 UI 가 표시.
+pub(crate) fn spawn_engine_load(app: &tauri::AppHandle) {
+    if let Ok(mut s) = app.state::<App>().status.lock() {
+        *s = "loading".into();
+    }
+    let h = app.clone();
+    std::thread::spawn(move || {
+        let st: State<App> = h.state();
+        if let Err(e) = ensure_engine(&h, &st) {
+            if let Ok(mut s) = st.status.lock() {
+                *s = format!("error: {e}");
+            }
+        }
+    });
+}
+
+/// 진행 상태 스냅샷 (stage, done, total, label)
+pub(crate) fn progress_snapshot(st: &State<App>) -> (String, u64, u64, String) {
+    st.progress.lock().map(|p| p.clone()).unwrap_or_default()
 }

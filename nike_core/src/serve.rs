@@ -32,9 +32,8 @@ pub(crate) fn serve(port: u16) -> Result<()> {
                 .collect();
             let q = qs.get("q").cloned().unwrap_or_default();
             let k = qs.get("k").and_then(|x| x.parse().ok()).unwrap_or(20);
-            let flt = qs.get("filter").and_then(|f| f.split_once('=').map(|(a, b)| (a.to_string(), b.to_string())));
             let mode = qs.get("mode").cloned();
-            let hits = if q.trim().is_empty() { vec![] } else { eng.search_mode(&q, k, flt.as_ref().map(|(a, b)| (a.as_str(), b.as_str())), mode.as_deref())? };
+            let hits = if q.trim().is_empty() { vec![] } else { eng.search_kv(&q, k, qs.get("filter").map(|s| s.as_str()), mode.as_deref())? };
             ("application/json; charset=utf-8", serde_json::to_vec(&serde_json::json!({"rows": hits}))?)
         } else {
             let f = if path == "/" { "index.html".to_string() } else { path.trim_start_matches('/').to_string() };

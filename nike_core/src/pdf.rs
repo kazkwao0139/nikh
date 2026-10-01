@@ -4,6 +4,42 @@ use crate::ocr::ocr_pdf;
 
 /// (구간 라벨, 본문, 문단별 (라벨, 앞 80자, 유사도) — 자동 분류일 때만)
 pub type Facts = (String, String, Vec<(String, String, f32)>);
+
+/// PACER 스탬프('Case 2:24-cv-00123 Document 1 Filed…')·'Page 3 of 20'·플리딩 용지 줄번호(1–28) 제거. bare_page_numbers: 숫자만 있는 줄(쪽번호)도 지움
+fn strip_court_stamps(text: &str, bare_page_numbers: bool) -> String {
+    let re_stamp = Regex::new(if bare_page_numbers {
+        r"(?mi)^\s*Case\s+\d[:\d]*-[a-z]{2}-\d+[^\n]*$|^\s*(?:Page\s+\d+\s+of\s+\d+|-\s*\d+\s*-|\d{1,3})\s*$"
+    } else {
+        r"(?mi)^\s*Case\s+\d[:\d]*-[a-z]{2}-\d+[^\n]*$|^\s*(?:Page\s+\d+\s+of\s+\d+|-\s*\d+\s*-)\s*$"
+    })
+    .unwrap();
+    let re_lineno = Regex::new(r"(?m)^\s{0,6}\d{1,2}\s{2,}").unwrap();
+    re_lineno.replace_all(&re_stamp.replace_all(text, ""), "").to_string()
+}
+
+/// PDF 줄바꿈 복원: 문장 중간 줄바꿈은 붙이고 번호 항목(re_item) 앞은 유지. skip(줄) = 문단 경계로 취급(쪽번호 등), closes(줄) = 그 줄에서 문장이 끝남. 빈 줄 3개 이상은 2개로.
+fn join_wrapped_lines(body: &str, re_item: &Regex, skip: impl Fn(&str) -> bool, closes: impl Fn(&str) -> bool) -> String {
+    let mut out = String::new();
+    let mut prev_open = false;
+    for line in body.lines() {
+        let l = line.trim();
+        if l.is_empty() || skip(l) {
+            if !out.is_empty() && !out.ends_with("\n\n") {
+                out.push('\n');
+            }
+            prev_open = false;
+            continue;
+        }
+        if prev_open && !re_item.is_match(l) {
+            out.push(' ');
+        } else if !out.is_empty() && !out.ends_with('\n') {
+            out.push('\n');
+        }
+        out.push_str(l);
+        prev_open = !closes(l);
+    }
+    Regex::new(r"\n{3,}").unwrap().replace_all(&out, "\n\n").to_string()
+}
 use anyhow::Result;
 use regex::Regex;
 use serde::Deserialize;
@@ -44,9 +80,7 @@ pub fn is_english(text: &str) -> bool {
 }
 /// 미국 소장·기소장·브리프: 표제(STATEMENT OF FACTS 등) 사이 구간. 대문자·공백 제거본에서 찾음. PACER 스탬프·플리딩 용지 줄번호·쪽 표기 제거.
 pub fn pdf_section_by_heading_en(text: &str) -> Result<Option<(String, String)>> {
-    let re_stamp = Regex::new(r"(?mi)^\s*Case\s+\d[:\d]*-[a-z]{2}-\d+[^\n]*$|^\s*(?:Page\s+\d+\s+of\s+\d+|-\s*\d+\s*-|\d{1,3})\s*$")?; // 'Case 2:24-cv-00123 Document 1 Filed…', 'Page 3 of 20', 쪽번호
-    let re_lineno = Regex::new(r"(?m)^\s{0,6}\d{1,2}\s{2,}")?; // 캘리포니아 플리딩 용지 줄번호(1–28)
-    let t = re_lineno.replace_all(&re_stamp.replace_all(text, ""), "").to_string();
+    let t = strip_court_stamps(text, true);
     let chars: Vec<char> = t.chars().collect();
     let mut map = Vec::with_capacity(chars.len());
     let mut sq: Vec<char> = Vec::with_capacity(chars.len());
@@ -144,33 +178,12 @@ pub fn pdf_section_by_heading_en(text: &str) -> Result<Option<(String, String)>>
         _ => return Ok(None),
     };
     let re_item = Regex::new(r"^\s*(\d{1,3}\.|[a-z]\.|\(\d{1,3}\)|\([a-z]\)|[IVX]+\.)")?;
-    let mut out = String::new();
-    let mut prev_open = false;
-    for line in r.1.lines() {
-        let l = line.trim();
-        if l.is_empty() {
-            if !out.is_empty() && !out.ends_with("\n\n") {
-                out.push('\n');
-            }
-            prev_open = false;
-            continue;
-        }
-        if prev_open && !re_item.is_match(l) {
-            out.push(' ');
-        } else if !out.is_empty() && !out.ends_with('\n') {
-            out.push('\n');
-        }
-        out.push_str(l);
-        prev_open = !(l.ends_with('.') || l.ends_with(':') || l.ends_with(';'));
-    }
-    let body = Regex::new(r"\n{3,}")?.replace_all(&out, "\n\n").to_string();
+    let body = join_wrapped_lines(&r.1, &re_item, |_| false, |l| l.ends_with('.') || l.ends_with(':') || l.ends_with(';'));
     Ok(Some((r.0, body.chars().take(6000).collect())))
 }
 /// 영어 문서 표제 없음: 첫 번호 문단('1.')·'COMES NOW'·'Plaintiff … alleges' 부터 WHEREFORE·PRAYER·COUNT·서명·송달증명 전까지(캡션·서명 제거). 그것도 없으면 본문 앞 6,000자.
 pub fn en_body_fallback(text: &str) -> (String, String) {
-    let re_stamp = Regex::new(r"(?mi)^\s*Case\s+\d[:\d]*-[a-z]{2}-\d+[^\n]*$|^\s*(?:Page\s+\d+\s+of\s+\d+|-\s*\d+\s*-|\d{1,3})\s*$").unwrap();
-    let re_lineno = Regex::new(r"(?m)^\s{0,6}\d{1,2}\s{2,}").unwrap();
-    let t = re_lineno.replace_all(&re_stamp.replace_all(text, ""), "").to_string();
+    let t = strip_court_stamps(text, true);
     let re_start = Regex::new(
         r"(?mi)^\s*1\.\s+\S|^\s*COMES?\s+NOW\b|^\s*(?:Plaintiffs?|Petitioners?|Defendants?)\b[^\n]{0,80}\b(?:alleges?|states?|avers?|complains?|petitions?)\b",
     )
@@ -180,26 +193,7 @@ pub fn en_body_fallback(text: &str) -> (String, String) {
     let en = re_end.find_at(&t, (st + 200).min(t.len())).map(|m| m.start()).unwrap_or(t.len());
     let body = t[st..en.max(st)].trim();
     let re_item = Regex::new(r"^\s*(\d{1,3}\.|[a-z]\.|\(\d{1,3}\)|\([a-z]\)|[IVX]+\.)").unwrap();
-    let mut out = String::new();
-    let mut prev_open = false;
-    for line in body.lines() {
-        let l = line.trim();
-        if l.is_empty() {
-            if !out.is_empty() && !out.ends_with("\n\n") {
-                out.push('\n');
-            }
-            prev_open = false;
-            continue;
-        }
-        if prev_open && !re_item.is_match(l) {
-            out.push(' ');
-        } else if !out.is_empty() && !out.ends_with('\n') {
-            out.push('\n');
-        }
-        out.push_str(l);
-        prev_open = !(l.ends_with('.') || l.ends_with(':') || l.ends_with(';'));
-    }
-    let out = Regex::new(r"\n{3,}").unwrap().replace_all(&out, "\n\n").to_string();
+    let out = join_wrapped_lines(body, &re_item, |_| false, |l| l.ends_with('.') || l.ends_with(':') || l.ends_with(';'));
     ((if st > 0 { "Body (caption and prayer removed)" } else { "Full text" }).to_string(), out.chars().take(6000).collect())
 }
 pub fn pdf_section_by_heading(text: &str) -> Result<Option<(String, String)>> {
@@ -253,26 +247,12 @@ pub fn pdf_section_by_heading(text: &str) -> Result<Option<(String, String)>> {
     let body = re_junk.replace_all(&r.1, "").to_string();
     let re_item = Regex::new(r"^\s*(\d{1,2}\.|[가-하]\.|\(\d{1,2}\)|[①-⑳])")?;
     let re_page = Regex::new(r"^\s*-?\s*\d{1,3}\s*-?\s*$")?;
-    let mut out = String::new();
-    let mut prev_open = false;
-    for line in body.lines() {
-        let l = line.trim();
-        if l.is_empty() || re_page.is_match(l) {
-            if !out.is_empty() && !out.ends_with("\n\n") {
-                out.push('\n');
-            }
-            prev_open = false;
-            continue;
-        }
-        if prev_open && !re_item.is_match(l) {
-            out.push(' ');
-        } else if !out.is_empty() && !out.ends_with('\n') {
-            out.push('\n');
-        }
-        out.push_str(l);
-        prev_open = !(l.ends_with('.') || l.ends_with('。') || l.ends_with(':') || l.ends_with("다") && l.len() < 12);
-    }
-    let body = Regex::new(r"\n{3,}")?.replace_all(&out, "\n\n").to_string();
+    let body = join_wrapped_lines(
+        &body,
+        &re_item,
+        |l| re_page.is_match(l),
+        |l| l.ends_with('.') || l.ends_with('。') || l.ends_with(':') || l.ends_with("다") && l.len() < 12,
+    );
     Ok(Some((r.0, body.chars().take(6000).collect())))
 }
 pub fn pdf_facts(bytes: &[u8]) -> Result<(String, String)> {
@@ -290,9 +270,7 @@ struct Proto {
 pub fn split_paragraphs(text: &str) -> Vec<String> {
     let mut t = text.to_string();
     if is_english(&t) {
-        let re_stamp = Regex::new(r"(?mi)^\s*Case\s+\d[:\d]*-[a-z]{2}-\d+[^\n]*$|^\s*(?:Page\s+\d+\s+of\s+\d+|-\s*\d+\s*-)\s*$").unwrap();
-        let re_lineno = Regex::new(r"(?m)^\s{0,6}\d{1,2}\s{2,}").unwrap();
-        t = re_lineno.replace_all(&re_stamp.replace_all(&t, ""), "").to_string();
+        t = strip_court_stamps(&t, false);
     }
     if let Some(m) = Regex::new(r"\n[^\n]*귀\s*중[^\n]*\n").ok().and_then(|re| re.find(&t)) {
         t.truncate(m.end());

@@ -1,4 +1,5 @@
 // 심급 체인·원심 링크
+const chainNodeLabel=c=>`${escapeHtml(c.법원||'')} ${shortNo(c.사건번호||'')}${(c.결과||[]).length?' · '+escapeHtml((c.결과||[]).join('·')):''}`;   // 심급 노드: 법원 사건번호 · 결과
 const COURT={'고법':'고등법원','지법':'지방법원','가정법원':'가정법원','행정법원':'행정법원','회생법원':'회생법원','특허법원':'특허법원','지원':'지원'};
 function normCourt(s){ // "서울고법" → "서울고등법원", "부산고법 (창원)" → "부산고등법원 창원재판부", "수원지법 안양지원" 그대로
   let c=s.replace(/\s+/g,' ').trim(); const br=c.match(/\((.+?)\)/); c=c.replace(/\(.+?\)/,'').trim();
@@ -15,7 +16,7 @@ function prevLinks(txt){ // "서울고법 2023. 9. 7. 선고 2023나2001980, 200
 function lineage(chain){ // 항상 1심→2심→3심 사다리. 수록/미수록(링크)/번호 불명. 미국 판례는 Trial→Appellate→Highest
   const us=chain.some(c=>['Trial','Appellate','Highest'].includes(c.심급));
   if(us){ const byLv={}; chain.forEach(c=>{byLv[c.심급]=c}); const lvs=['Trial','Appellate','Highest'];
-    const nodes=lvs.map(lv=>{ const c=byLv[lv]; if(c) return `<span class="n in">${lv} · ${escapeHtml(c.법원||'')} ${shortNo(c.사건번호||'')}${(c.결과||[]).length?' · '+escapeHtml((c.결과||[]).join('·')):''}</span>`;
+    const nodes=lvs.map(lv=>{ const c=byLv[lv]; if(c) return `<span class="n in">${lv} · ${chainNodeLabel(c)}</span>`;
       let txt=null; if(lv==='Appellate'&&byLv['Highest']) txt=byLv['Highest'].원심표기; if(lv==='Trial'&&byLv['Appellate']) txt=byLv['Appellate'].원심표기;
       if(txt){ const cite=(txt.split(',').slice(-1)[0]||'').trim(); return `<span class="n miss">${lv} · not in packs · ${escapeHtml(txt)} · <a href="https://www.courtlistener.com/?q=${encodeURIComponent('"'+cite+'"')}" target="_blank" rel="noopener">CourtListener ↗</a></span>`; }
       return `<span class="n miss">${lv} · —</span>`; });
@@ -26,7 +27,7 @@ function lineage(chain){ // 항상 1심→2심→3심 사다리. 수록/미수�
   if(!has3&&has2) lvs.pop();                          // 2심까지만 존재하면 3심 칸 없음(상고 여부 불명)
   const nodes=lvs.map(lv=>{
     const c=byLv[lv];
-    if(c) return `<span class="n in">${lv} · 수록 · ${escapeHtml(c.법원||'')} ${shortNo(c.사건번호||'')}${(c.결과||[]).length?' · '+escapeHtml((c.결과||[]).join('·')):''}</span>`;
+    if(c) return `<span class="n in">${lv} · 수록 · ${chainNodeLabel(c)}</span>`;
     // 미수록: 표기를 알 수 있는 경우 링크, 아니면 번호 불명
     let txt=null;
     if(lv==='2심'&&byLv['3심']) txt=byLv['3심'].원심표기;

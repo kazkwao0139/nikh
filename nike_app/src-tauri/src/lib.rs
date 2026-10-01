@@ -4,12 +4,12 @@ mod commands;
 mod packs;
 mod state;
 use crate::packs::{migrate_selected, swap_pending};
-use crate::state::{data_dir, ensure_engine, log_line, App};
+use crate::state::{data_dir, log_line, spawn_engine_load, App};
 use std::{
     fs,
     sync::{Arc, Mutex},
 };
-use tauri::{Manager, State};
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -32,15 +32,7 @@ pub fn run() {
                 progress: Arc::new(Mutex::new(("load".into(), 0, 0, String::new()))),
             });
             // 시작 즉시 백그라운드 로드 + 워밍업 (첫 검색 대기 제거). 실패해도 첫 검색 때 다시 시도.
-            let h = app.handle().clone();
-            std::thread::spawn(move || {
-                let st: State<App> = h.state();
-                if let Err(e) = ensure_engine(&h, &st) {
-                    if let Ok(mut s) = st.status.lock() {
-                        *s = format!("error: {e}");
-                    }
-                }
-            });
+            spawn_engine_load(app.handle());
             // 스토어 스크린샷용(시뮬레이터 simctl launch 의 SIMCTL_CHILD_NIKE_SHOT_JS): 지정 JS 를 몇 초 뒤 웹뷰에서 실행. 환경변수 없으면 무동작
             if let Ok(js) = std::env::var("NIKE_SHOT_JS") {
                 let h = app.handle().clone();

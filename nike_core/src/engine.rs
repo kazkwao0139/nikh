@@ -197,6 +197,10 @@ pub struct Engine {
     re_first: Regex,
 }
 
+fn ort_err(e: impl std::fmt::Display) -> anyhow::Error {
+    anyhow::anyhow!("ort: {e}")
+}
+
 fn case_number_key(s: &str) -> String {
     s.split(',').next().unwrap_or("").chars().filter(|c| !c.is_whitespace()).collect()
 }
@@ -313,13 +317,13 @@ impl Engine {
         for model_path in &candidates {
             match (|| -> Result<Session> {
                 Session::builder()
-                    .map_err(|e| anyhow::anyhow!("ort: {e}"))?
+                    .map_err(ort_err)?
                     .with_optimization_level(GraphOptimizationLevel::Level3)
-                    .map_err(|e| anyhow::anyhow!("ort: {e}"))?
+                    .map_err(ort_err)?
                     .with_intra_threads(4)
-                    .map_err(|e| anyhow::anyhow!("ort: {e}"))?
+                    .map_err(ort_err)?
                     .commit_from_file(model_path)
-                    .map_err(|e| anyhow::anyhow!("ort: {e}"))
+                    .map_err(ort_err)
             })() {
                 Ok(s) => {
                     sess_res = Some(s);
@@ -343,10 +347,10 @@ impl Engine {
         let ids: Vec<i64> = enc.get_ids().iter().map(|&x| x as i64).collect();
         let mask: Vec<i64> = enc.get_attention_mask().iter().map(|&x| x as i64).collect();
         let len = ids.len();
-        let ids_t = Tensor::from_array(([1usize, len], ids)).map_err(|e| anyhow::anyhow!("ort: {e}"))?;
-        let mask_t = Tensor::from_array(([1usize, len], mask)).map_err(|e| anyhow::anyhow!("ort: {e}"))?;
-        let out = self.sess.run(ort::inputs!["input_ids" => ids_t, "attention_mask" => mask_t]).map_err(|e| anyhow::anyhow!("ort: {e}"))?;
-        let (shape, data) = out[0].try_extract_tensor::<f32>().map_err(|e| anyhow::anyhow!("ort: {e}"))?; // [1, len, dim] last_hidden_state
+        let ids_t = Tensor::from_array(([1usize, len], ids)).map_err(ort_err)?;
+        let mask_t = Tensor::from_array(([1usize, len], mask)).map_err(ort_err)?;
+        let out = self.sess.run(ort::inputs!["input_ids" => ids_t, "attention_mask" => mask_t]).map_err(ort_err)?;
+        let (shape, data) = out[0].try_extract_tensor::<f32>().map_err(ort_err)?; // [1, len, dim] last_hidden_state
         let dim = shape[2] as usize;
         let mut v: Vec<f32> = data[..dim].to_vec(); // CLS = 위치 0
         let norm = v.iter().map(|x| x * x).sum::<f32>().sqrt().max(1e-9);
@@ -378,6 +382,11 @@ impl Engine {
 
     pub fn search(&mut self, q: &str, k: usize, filter: Option<(&str, &str)>) -> Result<Vec<Hit>> {
         self.search_mode(q, k, filter, None)
+    }
+
+    /// filter_kv: "키=값" 한 덩어리(예: "결과=파기환송"). CLI·서버·앱이 같은 형식으로 넘김.
+    pub fn search_kv(&mut self, q: &str, k: usize, filter_kv: Option<&str>, mode: Option<&str>) -> Result<Vec<Hit>> {
+        self.search_mode(q, k, filter_kv.and_then(|s| s.split_once('=')), mode)
     }
 
     /// mode: Some("patent") = 특허 팩만, Some("case") = 특허 제외, None = 전부

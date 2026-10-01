@@ -1,6 +1,6 @@
 //! Tauri 커맨드 — UI 가 invoke 로 부르는 함수들. 검색·상태·팩 목록/다운로드/삭제/선택·모델 다운로드·링크 열기·앱 업데이트 확인·PDF 사실관계.
-use crate::packs::{excluded_keys, manifest_any, manifest_remote, mobile_blocked, sha256_file, swap_pending, sync_file, Ev, MANIFEST_URL};
-use crate::state::{ensure_engine, log_line, model_dir, App};
+use crate::packs::{excluded_keys, installed_pack_keys, manifest_any, manifest_remote, mobile_blocked, sha256_file, swap_pending, sync_file, Ev, MANIFEST_URL};
+use crate::state::{ensure_engine, log_line, model_dir, progress_snapshot, spawn_engine_load, App};
 use nike_core::Engine;
 use serde::Serialize;
 use std::{
@@ -9,6 +9,27 @@ use std::{
     path::PathBuf,
 };
 use tauri::{Manager, State};
+
+/// 팩 키가 경로를 벗어나는지('/'·'..')
+fn unsafe_key(key: &str) -> bool {
+    key.contains('/') || key.contains("..")
+}
+
+/// 실제로 받을 예상 바이트: 파일별로 설치본(old_dir)보다 늘어난 만큼. 설치본이 없거나 더 크면(줄어든 파일) 그 파일 전체.
+fn delta_bytes(files: &serde_json::Map<String, serde_json::Value>, old_dir: Option<&std::path::Path>) -> u64 {
+    files
+        .iter()
+        .map(|(f, i)| {
+            let w = i["bytes"].as_u64().unwrap_or(0);
+            let o = old_dir.map(|d| fs::metadata(d.join(f)).map(|m| m.len()).unwrap_or(0)).unwrap_or(0);
+            if o > 0 && o <= w {
+                w - o
+            } else {
+                w
+            }
+        })
+        .sum()
+}
 
 #[derive(Serialize)]
 pub struct PackInfo {
@@ -52,22 +73,7 @@ pub async fn packs(st: State<'_, App>) -> Result<Vec<PackInfo>, String> {
         } else if !update {
             0
         } else {
-            p["files"]
-                .as_object()
-                .map(|fs| {
-                    fs.iter()
-                        .map(|(f, i)| {
-                            let w = i["bytes"].as_u64().unwrap_or(0);
-                            let o = fs::metadata(dir.join(f)).map(|m| m.len()).unwrap_or(0);
-                            if o > 0 && o <= w {
-                                w - o
-                            } else {
-                                w
-                            }
-                        })
-                        .sum()
-                })
-                .unwrap_or(0)
+            p["files"].as_object().map(|fs| delta_bytes(fs, Some(&dir))).unwrap_or(0)
         };
         out.push(PackInfo {
             key: key.clone(),
@@ -145,7 +151,7 @@ pub async fn download_pack(key: String, st: State<'_, App>) -> Result<String, St
     if mobile_blocked(&key) {
         return Err("iPad 에서는 특허 공보 팩을 지원하지 않습니다".into());
     }
-    if key.contains('/') || key.contains("..") {
+    if unsafe_key(&key) {
         return Err("잘못된 팩".into());
     }
     let m = manifest_remote().ok_or("서버 manifest 없음")?;
@@ -158,18 +164,7 @@ pub async fn download_pack(key: String, st: State<'_, App>) -> Result<String, St
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?; // 임시 폴더에 준비(설치본·mmap 무손상), 적용 시 교체
                                                           // 게이지 총량 = 새로 받을 예상 바이트(설치본보다 늘어난 만큼, 없으면 전체)
-    let total: u64 = files
-        .iter()
-        .map(|(f, i)| {
-            let w = i["bytes"].as_u64().unwrap_or(0);
-            let o = if has_old { fs::metadata(installed.join(f)).map(|m| m.len()).unwrap_or(0) } else { 0 };
-            if o > 0 && o <= w {
-                w - o
-            } else {
-                w
-            }
-        })
-        .sum();
+    let total: u64 = delta_bytes(&files, has_old.then_some(installed.as_path()));
     let (mut done, mut total) = (0u64, total);
     let mut stage = "dl";
     if let Ok(mut pr) = st.progress.lock() {
@@ -218,7 +213,7 @@ pub async fn delete_packs(app: tauri::AppHandle, keys: Vec<String>, st: State<'_
     let mut freed = 0u64;
     *st.eng.lock().map_err(|e| e.to_string())? = None; // mmap 해제 후 삭제
     for k in &keys {
-        if k.contains('/') || k.contains("..") {
+        if unsafe_key(k) {
             continue;
         }
         let d = packs_dir.join(k);
@@ -234,48 +229,19 @@ pub async fn delete_packs(app: tauri::AppHandle, keys: Vec<String>, st: State<'_
     }
     let ex: Vec<String> = excluded_keys(&st.data).into_iter().filter(|k| !keys.contains(k)).collect();
     let _ = fs::write(st.data.join("excluded.json"), serde_json::to_string(&ex).unwrap_or_default());
-    if let Ok(mut s) = st.status.lock() {
-        *s = "loading".into();
-    }
-    let h = app.clone();
-    std::thread::spawn(move || {
-        let st: State<App> = h.state();
-        if let Err(e) = ensure_engine(&h, &st) {
-            if let Ok(mut s) = st.status.lock() {
-                *s = format!("error: {e}");
-            }
-        }
-    });
+    spawn_engine_load(&app);
     Ok(freed)
 }
 #[tauri::command]
 pub async fn select_packs(app: tauri::AppHandle, keys: Vec<String>, st: State<'_, App>) -> Result<(), String> {
     let packs_dir = st.data.join("packs"); // 설치된 팩 중 체크 해제된 것만 기록
-    let installed: Vec<String> = fs::read_dir(&packs_dir)
-        .map(|it| {
-            it.filter_map(|e| e.ok())
-                .filter(|e| e.path().join("meta.json").exists())
-                .map(|e| e.file_name().to_string_lossy().to_string())
-                .filter(|n| !n.ends_with(".tmp") && !n.ends_with(".old"))
-                .collect()
-        })
-        .unwrap_or_default();
+    let installed: Vec<String> =
+        installed_pack_keys(&packs_dir).unwrap_or_default().into_iter().filter(|n| !n.ends_with(".tmp") && !n.ends_with(".old")).collect();
     let excluded: Vec<String> = installed.into_iter().filter(|k| !keys.contains(k)).collect();
     fs::write(st.data.join("excluded.json"), serde_json::to_string(&excluded).unwrap()).map_err(|e| e.to_string())?;
     *st.eng.lock().map_err(|e| e.to_string())? = None;
     swap_pending(&packs_dir); // 엔진을 내린 뒤에야 내려받은 <key>.tmp 를 설치본과 교체(mmap 중 덮어쓰기 금지)
-    if let Ok(mut s) = st.status.lock() {
-        *s = "loading".into();
-    }
-    let h = app.clone();
-    std::thread::spawn(move || {
-        let st: State<App> = h.state();
-        if let Err(e) = ensure_engine(&h, &st) {
-            if let Ok(mut s) = st.status.lock() {
-                *s = format!("error: {e}");
-            }
-        }
-    }); // 적용 즉시 백그라운드 재로드 → 푸터 게이지·준비 완료
+    spawn_engine_load(&app); // 적용 즉시 백그라운드 재로드 → 푸터 게이지·준비 완료
     Ok(())
 }
 
@@ -291,9 +257,8 @@ pub async fn search(
     ensure_engine(&app, &st)?;
     let mut g = st.eng.lock().map_err(|e| e.to_string())?;
     let eng = g.as_mut().unwrap();
-    let f = filter.as_deref().and_then(|s| s.split_once('=')).map(|(a, b)| (a.to_string(), b.to_string()));
     let t1 = std::time::Instant::now();
-    let hits = eng.search_mode(&q, k.clamp(1, 200), f.as_ref().map(|(a, b)| (a.as_str(), b.as_str())), mode.as_deref()).map_err(|e| e.to_string())?;
+    let hits = eng.search_kv(&q, k.clamp(1, 200), filter.as_deref(), mode.as_deref()).map_err(|e| e.to_string())?;
     log_line(&st.data, format!("search k={} hits={} in {}ms (질의 길이 {}자)", k, hits.len(), t1.elapsed().as_millis(), q.chars().count()));
     Ok(serde_json::json!({ "rows": hits, "loaded": eng.loaded }))
 }
@@ -366,14 +331,14 @@ pub async fn stats(app: tauri::AppHandle, st: State<'_, App>) -> Result<serde_js
     let g = match st.eng.try_lock() {
         Ok(g) => g,
         Err(_) => {
-            let (stage, done, total, label) = st.progress.lock().map(|p| p.clone()).unwrap_or_default();
+            let (stage, done, total, label) = progress_snapshot(&st);
             return Ok(
                 serde_json::json!({"recs": 0, "chunks": 0, "loaded": [], "status": "loading", "stage": stage, "done": done, "total": total, "label": label, "model": model_ok}),
             );
         }
     };
     let status = st.status.lock().map(|s| s.clone()).unwrap_or_default();
-    let (stage, done, total, label) = st.progress.lock().map(|p| p.clone()).unwrap_or_default();
+    let (stage, done, total, label) = progress_snapshot(&st);
     Ok(match g.as_ref() {
         Some(e) => {
             let (r, c) = e.stats();

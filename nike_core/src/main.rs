@@ -74,9 +74,8 @@ fn main() -> Result<()> {
                 )
             };
             let mut eng = load_engine()?;
-            let f = filter.as_deref().and_then(|s| s.split_once('=')).map(|(a, b)| (a.to_string(), b.to_string()));
             let t = std::time::Instant::now();
-            let hits = eng.search_mode(&q, k, f.as_ref().map(|(a, b)| (a.as_str(), b.as_str())), mode.as_deref())?;
+            let hits = eng.search_kv(&q, k, filter.as_deref(), mode.as_deref())?;
             let ms = t.elapsed().as_millis();
             if json {
                 println!("{}", serde_json::to_string(&serde_json::json!({"query": q, "ms": ms, "hits": hits.iter().map(hit_json).collect::<Vec<_>>()}))?);
