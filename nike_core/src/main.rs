@@ -140,7 +140,8 @@ fn serve(port: u16) -> Result<()> {
             ("application/json; charset=utf-8", serde_json::to_vec(&serde_json::json!({"rows": hits}))?)
         } else {
             let f = if path == "/" { "index.html".to_string() } else { path.trim_start_matches('/').to_string() };
-            match std::fs::read(Path::new(&ui_dir).join(&f)) { Ok(b) => ("text/html; charset=utf-8", b), Err(_) => ("text/plain", b"not found".to_vec()) }
+            let ct = if f.ends_with(".js") { "application/javascript; charset=utf-8" } else if f.ends_with(".css") { "text/css; charset=utf-8" } else { "text/html; charset=utf-8" };   // ui 가 index.html + app.css + js/ 로 나뉨
+            match std::fs::read(Path::new(&ui_dir).join(&f)) { Ok(b) => (ct, b), Err(_) => ("text/plain", b"not found".to_vec()) }
         };
         let _ = write!(s, "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", ctype, body.len()); let _ = s.write_all(&body);
     }
