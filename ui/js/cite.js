@@ -73,7 +73,3 @@ function cite(c,x){ // 판례: 대법원 2023. 5. 18. 선고 2022다12345 판결
   if(String(x.종류||'').startsWith('US')){ const y=String(c.선고일자||x.선고일자||'').slice(0,4); const rep=(String(no).match(/^\d+ (.+?) \d+/)||[])[1]||''; const ab=bb(ct); const cc=(ab&&courtImplied(rep))?'':(ab||ct); return `${x.사건명}, ${no} (${[cc,y].filter(Boolean).join(' ')})`; }   /* Bluebook: T7 법원 약어, 리포터가 법원을 특정하면 생략 */
   return `${ct} ${no} (${d})`; }
 async function copyText(t){ try{ await navigator.clipboard.writeText(t); }catch(e){ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } }
-$('#rcopy').onclick=async()=>{ const x=R.list[R.i]; const chain=(x.chain&&x.chain.length)?x.chain:[x]; const sel=window.getSelection(); const st=sel&&sel.toString().trim();
-  let idx=0; if(st&&sel.anchorNode){ const col=(sel.anchorNode.nodeType===1?sel.anchorNode:sel.anchorNode.parentElement).closest('.col'); if(col) idx=[...document.querySelectorAll('#cols .col')].indexOf(col); }
-  const c=chain[Math.max(idx,0)]||x; const src=cite(c,x); const t=st?`"${st}" (${src})`:src; await copyText(t); $('#rcopied').textContent=L('복사됨: ','Copied: ')+t.slice(0,60)+(t.length>60?'…':''); setTimeout(()=>$('#rcopied').textContent='',4000); };
-$('#rclose').onclick=closeReader; $('#rprev').onclick=()=>{if(R.i>0){R.i--;drawReader();}}; $('#rnext').onclick=()=>{if(R.i<R.list.length-1){R.i++;drawReader();}};

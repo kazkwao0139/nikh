@@ -1,5 +1,9 @@
 // 초기 렌더·Tauri 상태 폴링·키보드
 // ── 버튼·입력 바인딩 (run 등 뒤 파일의 함수 참조 → 정의가 모두 끝난 뒤 실행) ──
+$('#rcopy').onclick=async()=>{ const x=R.list[R.i]; const chain=(x.chain&&x.chain.length)?x.chain:[x]; const sel=window.getSelection(); const st=sel&&sel.toString().trim();
+  let idx=0; if(st&&sel.anchorNode){ const col=(sel.anchorNode.nodeType===1?sel.anchorNode:sel.anchorNode.parentElement).closest('.col'); if(col) idx=[...document.querySelectorAll('#cols .col')].indexOf(col); }
+  const c=chain[Math.max(idx,0)]||x; const src=cite(c,x); const t=st?`"${st}" (${src})`:src; await copyText(t); $('#rcopied').textContent=L('복사됨: ','Copied: ')+t.slice(0,60)+(t.length>60?'…':''); setTimeout(()=>$('#rcopied').textContent='',4000); };
+$('#rclose').onclick=closeReader; $('#rprev').onclick=()=>{if(R.i>0){R.i--;drawReader();}}; $('#rnext').onclick=()=>{if(R.i<R.list.length-1){R.i++;drawReader();}};
 document.querySelectorAll('#lang .l').forEach(b=>b.onclick=()=>{ setLang(b.dataset.l); if(q.value.trim()) run(); });   // 한 경로(setLang)
 document.querySelectorAll('#modes .m').forEach(m=>m.onclick=()=>{MODE=m.dataset.m; if(IS_TAURI) inv('prewarm',{mode:MODE}).catch(()=>{});document.querySelectorAll('#modes .m').forEach(x=>x.classList.toggle('on',x===m));q.placeholder=PH[MODE];drawScope();syncTips();if(q.value.trim())run();else q.focus();});
 const openExt=u=>{ if(!u) return; if(IS_TAURI) inv('open_url',{url:u}).catch(e=>alert(String(e))); else window.open(u,'_blank','noopener'); };
