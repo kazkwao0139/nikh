@@ -33,7 +33,7 @@ test('cite(한국): 사건부호별 판결·결정·심판·재결·판정·의�
 test('cite(미국): Bluebook — 법원 약어, 리포터가 법원을 특정하면 생략', () => {
   const c = load('en'); const u = (name, no, ct, d) => c.cite({}, { 사건명: name, 사건번호: no, 법원: ct, 선고일자: d, 종류: 'US Civil' });
   assert.equal(u('Evans v. Brown', '109 U.S. 180', 'Supreme Court of the United States', '1883'), 'Evans v. Brown, 109 U.S. 180 (1883)');
-  assert.equal(u('In re NCS Healthcare, Inc., Shareholders Litigation', '825 A.2d 240', 'Delaware Court of Chancery', '20021122'), 'In re NCS Healthcare, Inc., Shareholders Litigation, 825 A.2d 240 (Del. Ch. 2002)');
+  assert.equal(u('In re NCS Healthcare, Inc., Shareholders Litigation', '825 A.2d 240', 'Delaware Court of Chancery', '20021122'), 'In re NCS Healthcare, Inc., S\'holders Litig., 825 A.2d 240 (Del. Ch. 2002)');
   assert.equal(u('Smith v. Jones', '611 F.2d 15', 'United States Court of Appeals for the Second Circuit', '19791101'), 'Smith v. Jones, 611 F.2d 15 (2d Cir. 1979)');
   assert.equal(u('A v. B', '41 F. Supp. 100', 'District Court, S.D. New York', '1941'), 'A v. B, 41 F. Supp. 100 (S.D.N.Y. 1941)');
   assert.equal(u('A v. B', '12 A.D.2d 300', 'New York Supreme Court, Appellate Division', '1960'), 'A v. B, 12 A.D.2d 300 (1960)');
@@ -47,4 +47,12 @@ test('bb(): 법원명 약어 표본 + 팩 법원명 718종 커버리지(건수 �
   const rows = fs.readFileSync(path.join(__dirname, 'fixtures', 'us_courts.tsv'), 'utf8').trim().split('\n').map(l => { const [cnt, ...name] = l.split('\t'); return [+cnt, name.join('\t')]; });
   let tot = 0, ok = 0; for (const [cnt, name] of rows) { tot += cnt; if (c.bb(name)) ok += cnt; }
   assert.ok(ok / tot >= 0.995, `coverage ${(100 * ok / tot).toFixed(2)}%`);
+});
+
+test('t6(): 사건명 단어 약어(Bluebook T6)', () => {
+  const c = load('en');
+  assert.equal(c.t6('International Business Machines Corporation v. United States Department of Justice'), "Int'l Bus. Machs. Corp. v. United States Dep't of Justice");
+  assert.equal(c.t6('Smith v. Jones'), 'Smith v. Jones');
+  assert.equal(c.t6('In re Pacific Gas Company Shareholders Litigation'), "In re Pac. Gas Co. S'holders Litig.");
+  assert.equal(c.t6('NATIONAL ASSOCIATION OF MANUFACTURERS v. SEC'), "NAT'L ASS'N OF MANUFACTURERS v. SEC");
 });

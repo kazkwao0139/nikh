@@ -68,7 +68,8 @@ pub fn pdf_section_by_heading_en(text: &str) -> Result<Option<(String, String)>>
         let pre = pre.trim();
         let pre_ok = pre.is_empty() || Regex::new(r"^(?:[IVX]{1,5}\.?|[A-Z]\.|\d{1,2}\.|\(\w{1,3}\)|[A-Z]\))\s*$").map(|r| r.is_match(pre)).unwrap_or(false);
         let end_i = map[i + plen - 1] + 1;
-        let e = end_i; // 표제 마지막 글자 바로 다음부터 줄 끝까지 while e < chars.len() && chars[e] != '\n' { e += 1; }
+        // 길이·목차 판정은 '줄 시작 ~ 표제 끝'까지만 본다(줄 끝까지 넓히면 'The Grand Jury charges that on or about …' 같은 본문 첫 줄이 80자 규칙에 걸리고, 'CHARGES: COUNT 1' 의 끝 숫자가 쪽번호로 오인됨 — 560건 스윕에서 10건 악화 확인, 2026-10-01)
+        let e = end_i;
         let line: String = chars[k..e].iter().collect();
         let ahead: String = chars[e..(e + 300).min(chars.len())].iter().collect();
         let toc = line.contains("....") || ahead.contains("....") || Regex::new(r"\s\d{1,3}\s*$").map(|r| r.is_match(line.trim_end())).unwrap_or(false); // 목차 줄('Facts.' 다음 줄에 '...... 6') 제외
