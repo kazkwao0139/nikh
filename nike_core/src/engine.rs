@@ -234,7 +234,7 @@ impl Engine {
             let emb = unsafe { Mmap::map(&File::open(pack.join("emb_i8.bin"))?)? };
             anyhow::ensure!(emb.len() == n * dim, "emb size mismatch in {:?}", pack);
             let sb = std::fs::read(pack.join("emb_scale.bin"))?;
-            let scale: Vec<f32> = sb.chunks_exact(4).map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]])).collect();
+            let scale: Vec<f32> = sb.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b)).collect(); // clippy 1.98 chunks_exact_to_as_chunks
             let key = meta["key"].as_str().unwrap_or("pack").to_string();
             let (rstore, cstore) = if pack.join("meta.jsonl").exists() {
                 // v2: 텍스트는 zstd 블록, 메타만 상주
