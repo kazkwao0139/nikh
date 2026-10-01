@@ -4,6 +4,22 @@ on:
   workflow_dispatch: {}
 permissions: { contents: write }
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: "rustfmt, clippy" }
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: "nike_core -> target" }
+      - name: rustfmt (rustfmt.toml: max_width 160)
+        run: cargo fmt --manifest-path nike_core/Cargo.toml --all -- --check && cargo fmt --manifest-path nike_app/src-tauri/Cargo.toml --all -- --check
+      - name: clippy (nike_core, 경고 = 실패)
+        run: cargo clippy --manifest-path nike_core/Cargo.toml --all-targets -- -D warnings
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: ui tests (인용 복사·날짜·Bluebook 약어)
+        run: node --test ui/test/*.test.js
   windows:
     runs-on: windows-latest
     env:

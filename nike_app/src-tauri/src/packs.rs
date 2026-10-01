@@ -17,7 +17,7 @@ pub(crate) fn manifest_remote() -> Option<serde_json::Value> {
 }
 /// 오프라인 대비 manifest: 서버 → (성공 시 manifest_cache.json 에 저장) / 실패 → 저장본 → 개발용 packs/manifest.json → 설치된 팩 폴더(meta.json)로 합성.
 /// 반환 (manifest, 온라인 여부). 어떤 경우에도 None 이 아님 → 팩 화면이 에러 대신 설치된 팩을 보여줌.
-pub(crate) fn manifest_any(data: &PathBuf) -> (serde_json::Value, bool) {
+pub(crate) fn manifest_any(data: &Path) -> (serde_json::Value, bool) {
     let cache = data.join("manifest_cache.json");
     if let Some(m) = manifest_remote() {
         if let Ok(b) = serde_json::to_vec(&m) {
