@@ -2,12 +2,12 @@
 use std::{
     fs,
     io::{Read, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 pub(crate) const MANIFEST_URL: &str = "https://nike-data.hrmk.studio/manifest.json"; // 팩 배포처 (정적). 미정이면 로컬 packs/manifest.json 사용
 
-pub(crate) fn manifest_local(data: &PathBuf) -> Option<serde_json::Value> {
+pub(crate) fn manifest_local(data: &Path) -> Option<serde_json::Value> {
     fs::read(data.join("packs").join("manifest.json")).ok().and_then(|b| serde_json::from_slice(&b).ok())
 }
 pub(crate) fn manifest_remote() -> Option<serde_json::Value> {
@@ -30,7 +30,7 @@ pub(crate) fn manifest_any(data: &PathBuf) -> (serde_json::Value, bool) {
     }
     (manifest_offline(data), false)
 }
-pub(crate) fn manifest_offline(data: &PathBuf) -> serde_json::Value {
+pub(crate) fn manifest_offline(data: &Path) -> serde_json::Value {
     let cache = data.join("manifest_cache.json");
     if let Some(m) = fs::read(&cache).ok().and_then(|b| serde_json::from_slice(&b).ok()).or_else(|| manifest_local(data)) {
         return m;
@@ -100,7 +100,7 @@ pub(crate) fn swap_pending(packs_dir: &PathBuf) {
     }
 }
 /// selected.json(옛 형식: 켤 팩 목록) → excluded.json 1회 이전
-pub(crate) fn migrate_selected(data: &PathBuf) {
+pub(crate) fn migrate_selected(data: &Path) {
     let sel = data.join("selected.json");
     let ex = data.join("excluded.json");
     if !sel.exists() || ex.exists() {
@@ -118,7 +118,7 @@ pub(crate) fn migrate_selected(data: &PathBuf) {
 pub(crate) fn mobile_blocked(key: &str) -> bool {
     cfg!(mobile) && key.starts_with("pat_")
 }
-pub(crate) fn excluded_keys(data: &PathBuf) -> Vec<String> {
+pub(crate) fn excluded_keys(data: &Path) -> Vec<String> {
     fs::read_to_string(data.join("excluded.json")).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default()
 } // 사용자가 끈 팩만 기억 → 새 팩은 기본 켜짐
 

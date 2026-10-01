@@ -1,6 +1,9 @@
 //! PDF 사실관계 추출 — 텍스트 레이어 → 표제 규칙(한국어 청구원인·공소사실 / 영어 statement of facts) → 없으면 문단 임베딩 분류(한국어) 또는 위치 규칙(영어). 스캔본은 OCR(ocr 모듈).
 use crate::engine::Engine;
 use crate::ocr::ocr_pdf;
+
+/// (구간 라벨, 본문, 문단별 (라벨, 앞 80자, 유사도) — 자동 분류일 때만)
+pub type Facts = (String, String, Vec<(String, String, f32)>);
 use anyhow::Result;
 use regex::Regex;
 use serde::Deserialize;
@@ -65,7 +68,7 @@ pub fn pdf_section_by_heading_en(text: &str) -> Result<Option<(String, String)>>
         let pre = pre.trim();
         let pre_ok = pre.is_empty() || Regex::new(r"^(?:[IVX]{1,5}\.?|[A-Z]\.|\d{1,2}\.|\(\w{1,3}\)|[A-Z]\))\s*$").map(|r| r.is_match(pre)).unwrap_or(false);
         let end_i = map[i + plen - 1] + 1;
-        let mut e = end_i; // 표제 마지막 글자 바로 다음부터 줄 끝까지 while e < chars.len() && chars[e] != '\n' { e += 1; }
+        let e = end_i; // 표제 마지막 글자 바로 다음부터 줄 끝까지 while e < chars.len() && chars[e] != '\n' { e += 1; }
         let line: String = chars[k..e].iter().collect();
         let ahead: String = chars[e..(e + 300).min(chars.len())].iter().collect();
         let toc = line.contains("....") || ahead.contains("....") || Regex::new(r"\s\d{1,3}\s*$").map(|r| r.is_match(line.trim_end())).unwrap_or(false); // 목차 줄('Facts.' 다음 줄에 '...... 6') 제외
@@ -323,7 +326,7 @@ pub fn split_paragraphs(text: &str) -> Vec<String> {
 impl Engine {
     /// 소장·공소장·답변서·준비서면 PDF → 사실 문단. 1) 표제 규칙이 맞으면 그 구간, 2) 아니면 문단마다 임베딩→프로토타입 코사인으로 FACT 문단만 선별(생성 0, 문단별 유사도 반환).
     /// ocr_helper 가 있으면 텍스트 레이어 없는 PDF 를 OCR 로 읽음
-    pub fn pdf_facts_smart_ocr(&mut self, bytes: &[u8], ocr_helper: Option<&Path>) -> Result<(String, String, Vec<(String, String, f32)>)> {
+    pub fn pdf_facts_smart_ocr(&mut self, bytes: &[u8], ocr_helper: Option<&Path>) -> Result<Facts> {
         // 텍스트 레이어 추출 실패(스캔본·깨진 글리프·폰트 오류·파서 패닉) → 전부 OCR 로. 텍스트는 뽑혔는데 사실 구간을 못 찾으면 OCR 로 한 번 더(텍스트 레이어가 부분적인 스캔본).
         let helper = ocr_helper.unwrap_or(Path::new("ocr/nike_ocr"));
         let (text, mut ocr_used) = match pdf_text(bytes) {
@@ -344,7 +347,7 @@ impl Engine {
         };
         Ok((if ocr_used { format!("{lab} · OCR") } else { lab }, body, detail))
     }
-    pub fn facts_from_text(&mut self, text: &str) -> Result<(String, String, Vec<(String, String, f32)>)> {
+    pub fn facts_from_text(&mut self, text: &str) -> Result<Facts> {
         let text = text.replace('\u{0C}', "\n");
         if let Some((lab, body)) = pdf_section_by_heading(&text)? {
             return Ok((lab, body, vec![]));

@@ -4,7 +4,7 @@ use nike_core::Engine;
 use std::{
     fs,
     io::Write,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{Arc, Mutex},
 };
 use tauri::{Manager, State};
@@ -27,7 +27,7 @@ pub(crate) fn data_dir(app: &tauri::AppHandle) -> PathBuf {
     }
     app.path().app_data_dir().unwrap_or_else(|_| PathBuf::from("data"))
 }
-pub(crate) fn model_dir(app: &tauri::AppHandle, data: &PathBuf) -> PathBuf {
+pub(crate) fn model_dir(app: &tauri::AppHandle, data: &Path) -> PathBuf {
     let rd = app.path().resource_dir().unwrap_or_default();
     for c in [data.join("onnx").join("bge-m3"), rd.join("onnx").join("bge-m3"), rd.join("assets").join("onnx").join("bge-m3")] {
         if c.join("tokenizer.json").exists() {
@@ -52,7 +52,7 @@ pub(crate) fn mem_mb() -> (u64, u64) {
 pub(crate) fn mem_mb() -> (u64, u64) {
     (0, 0)
 }
-pub(crate) fn logline(data: &PathBuf, msg: String) {
+pub(crate) fn logline(data: &Path, msg: String) {
     // 진단 로그: 데이터 폴더의 nike.log (질의 내용은 기록하지 않음)
     if let Ok(mut f) = fs::OpenOptions::new().create(true).append(true).open(data.join("nike.log")) {
         let _ = writeln!(f, "{} {}", chrono_like(), msg);

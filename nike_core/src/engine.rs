@@ -312,14 +312,14 @@ impl Engine {
         let mut last_err = String::new();
         for model_path in &candidates {
             match (|| -> Result<Session> {
-                Ok(Session::builder()
+                Session::builder()
                     .map_err(|e| anyhow::anyhow!("ort: {e}"))?
                     .with_optimization_level(GraphOptimizationLevel::Level3)
                     .map_err(|e| anyhow::anyhow!("ort: {e}"))?
                     .with_intra_threads(4)
                     .map_err(|e| anyhow::anyhow!("ort: {e}"))?
                     .commit_from_file(model_path)
-                    .map_err(|e| anyhow::anyhow!("ort: {e}"))?)
+                    .map_err(|e| anyhow::anyhow!("ort: {e}"))
             })() {
                 Ok(s) => {
                     sess_res = Some(s);
@@ -359,7 +359,7 @@ impl Engine {
         let mut out = Vec::with_capacity(self.n);
         for p in &self.packs {
             if !pack_in_mode(&p.key, mode) {
-                out.extend(std::iter::repeat(f32::NEG_INFINITY).take(p.n));
+                out.extend(std::iter::repeat_n(f32::NEG_INFINITY, p.n));
                 continue;
             } // 모드 밖 팩은 계산 생략
             let emb = &p.emb[..];
@@ -471,12 +471,9 @@ impl Engine {
 
     pub fn chain_of(&self, pid: &str) -> Vec<ChainNode> {
         let mut first = pid.to_string();
-        loop {
-            match self.prev_of.get(&first) {
-                Some((Some(pno), _)) => match self.by_no.get(pno) {
-                    Some(p) if p != &first => first = p.clone(),
-                    _ => break,
-                },
+        while let Some((Some(pno), _)) = self.prev_of.get(&first) {
+            match self.by_no.get(pno) {
+                Some(p) if p != &first => first = p.clone(),
                 _ => break,
             }
         }

@@ -293,7 +293,7 @@ pub async fn search(
     let eng = g.as_mut().unwrap();
     let f = filter.as_deref().and_then(|s| s.split_once('=')).map(|(a, b)| (a.to_string(), b.to_string()));
     let t1 = std::time::Instant::now();
-    let hits = eng.search_mode(&q, k.max(1).min(200), f.as_ref().map(|(a, b)| (a.as_str(), b.as_str())), mode.as_deref()).map_err(|e| e.to_string())?;
+    let hits = eng.search_mode(&q, k.clamp(1, 200), f.as_ref().map(|(a, b)| (a.as_str(), b.as_str())), mode.as_deref()).map_err(|e| e.to_string())?;
     logline(&st.data, format!("search k={} hits={} in {}ms (질의 길이 {}자)", k, hits.len(), t1.elapsed().as_millis(), q.chars().count()));
     Ok(serde_json::json!({ "rows": hits, "loaded": eng.loaded }))
 }

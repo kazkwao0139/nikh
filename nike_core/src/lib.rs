@@ -5,4 +5,4 @@ mod ocr;
 mod pdf;
 pub use engine::{url_of, ChainNode, Engine, Hit, Rec, ZStore};
 pub use ocr::ocr_pdf;
-pub use pdf::{en_body_fallback, is_english, pdf_facts, pdf_section_by_heading, pdf_section_by_heading_en, pdf_text, split_paragraphs};
+pub use pdf::{en_body_fallback, is_english, pdf_facts, pdf_section_by_heading, pdf_section_by_heading_en, pdf_text, split_paragraphs, Facts};

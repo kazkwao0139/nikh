@@ -21,8 +21,8 @@ pub(crate) fn serve(port: u16) -> Result<()> {
             ("application/json; charset=utf-8", serde_json::to_vec(&serde_json::json!({"loaded": keys}))?)
         } else if path.starts_with("/api/search") {
             let qs: std::collections::HashMap<String, String> = path
-                .splitn(2, '?')
-                .nth(1)
+                .split_once('?')
+                .map(|x| x.1)
                 .unwrap_or("")
                 .split('&')
                 .filter_map(|kv| {

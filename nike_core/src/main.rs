@@ -24,14 +24,14 @@ fn main() -> Result<()> {
         "--pdftext" => {
             let b = std::fs::read(&args[1])?;
             println!("{}", nike_core::pdf_text(&b)?);
-            return Ok(());
+            Ok(())
         }
         "packs" => {
             println!("{}", serde_json::to_string_pretty(&packs_json()?)?);
-            return Ok(());
+            Ok(())
         }
-        "mcp" => return mcp(),
-        "serve" | "--serve" => return serve(args.get(1).and_then(|p| p.parse().ok()).unwrap_or(8791)),
+        "mcp" => mcp(),
+        "serve" | "--serve" => serve(args.get(1).and_then(|p| p.parse().ok()).unwrap_or(8791)),
         "pdf" | "--pdf" => {
             let json = args.iter().any(|a| a == "--json");
             let path = args.iter().skip(1).find(|a| !a.starts_with("--")).ok_or_else(|| anyhow!("pdf 파일 경로"))?;
@@ -46,9 +46,9 @@ fn main() -> Result<()> {
                 }
                 println!("[{lab}] {}자\n{body}", body.chars().count());
             }
-            return Ok(());
+            Ok(())
         }
-        "search" | _ => {
+        _ => {
             let (q, k, mode, filter, json) = if cmd == "search" {
                 (
                     args.iter()
