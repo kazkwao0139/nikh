@@ -76,7 +76,7 @@ pub(crate) fn ensure_engine(app: &tauri::AppHandle, st: &State<App>) -> Result<(
         let ex = excluded_keys(&st.data);
         let mut keys: Vec<String> = installed_pack_keys(&packs_dir).map_err(|e| e.to_string())?;
         keys.sort();
-        keys.retain(|k| !ex.contains(k) && !mobile_blocked(k));
+        keys.retain(|k| !ex.contains(k) && !mobile_blocked(k) && !k.ends_with(".tmp") && !k.ends_with(".old")); // 받는 중(.tmp)·교체 전(.old) 폴더는 팩으로 싣지 않음
         dirs = keys.iter().map(|k| packs_dir.join(k)).collect();
     } else if st.data.join("pack").join("meta.json").exists() {
         dirs.push(st.data.join("pack"));
