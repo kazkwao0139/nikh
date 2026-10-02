@@ -2,7 +2,7 @@
 
 [한국어 ↓](#한국어)
 
-Built over a weekend after getting fed up with case law and patent search. Probably nothing special.
+Built after getting fed up with case law and patent search. Probably nothing special.
 
 Describe your client's situation in plain sentences and the closest court decisions, administrative rulings, tribunal decisions and patent publications come back ranked by similarity.
 Offline · nothing generated · nothing logged. Downloads and details: https://nikh.hrmk.studio/en/
@@ -60,7 +60,7 @@ AGPL-3.0
 
 ## 한국어
 
-판례랑 특허 검색하다 빡쳐서 주말동안 만듦. 별 대단한건 아닐거임.
+판례랑 특허 검색하다 빡쳐서 만듦. 별 대단한건 아닐거임.
 
 의뢰인 상황을 문장으로 적으면 가장 비슷한 판례·해석례·심판례·특허 공보가 유사도 순으로 나옵니다.
 오프라인 · 생성 0 · 기록 0. 다운로드와 설명은 https://nikh.hrmk.studio
