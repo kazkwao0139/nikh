@@ -1,6 +1,6 @@
 [package]
 name = "nike_core"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 description = "니케 검색 엔진 — bge-m3 ONNX 임베딩 + int8 코사인 + 규칙 태그. 생성 0, 서버 0, 로그 0."
 

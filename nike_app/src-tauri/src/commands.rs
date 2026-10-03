@@ -239,6 +239,7 @@ pub async fn select_packs(app: tauri::AppHandle, keys: Vec<String>, st: State<'_
         installed_pack_keys(&packs_dir).unwrap_or_default().into_iter().filter(|n| !n.ends_with(".tmp") && !n.ends_with(".old")).collect();
     let excluded: Vec<String> = installed.into_iter().filter(|k| !keys.contains(k)).collect();
     fs::write(st.data.join("excluded.json"), serde_json::to_string(&excluded).unwrap()).map_err(|e| e.to_string())?;
+    st.failsafe_hold.store(false, std::sync::atomic::Ordering::SeqCst); // 사용자가 직접 골랐으므로 페일세이프 보류 해제
     *st.eng.lock().map_err(|e| e.to_string())? = None;
     swap_pending(&packs_dir); // 엔진을 내린 뒤에야 내려받은 <key>.tmp 를 설치본과 교체(mmap 중 덮어쓰기 금지)
     spawn_engine_load(&app); // 적용 즉시 백그라운드 재로드 → 푸터 게이지·준비 완료

@@ -4,6 +4,8 @@ document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
 const $=s=>document.querySelector(s); const fmtBytes=b=>b>=1e9?(b/1e9).toFixed(1)+' GB':(b/1e6).toFixed(0)+' MB';   // 용량 표기(GB/MB)
  const queryInput=$('#q'), home=$('#home'), res=$('#res');
 const IS_TAURI=!!(window.__TAURI__&&window.__TAURI__.core); const IS_MOBILE=/iPad|iPhone|Android/.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.userAgent)); const invoke=(c,a)=>window.__TAURI__.core.invoke(c,a||{});
+const US_SOFT_CAP_STATES=3;   // 미국 팩 선택 소프트캡: 주를 이 개수 이상 고르면 경고(빨강+흔들림)만, 적용은 가능. 연방 법원만 고르는 건 해당 없음
+const US_SOFT_CAP_TEXT=(states,size)=>`Too many states (${states}, ${size}). Download only the courts you practice in.`;   // 소프트캡 넘었을 때 안내문(2026-10-03 확정: 심플하게)
 queryInput.addEventListener('input',()=>{queryInput.style.height='auto';queryInput.style.height=Math.min(queryInput.scrollHeight,200)+'px';});
 queryInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();runSearch();}});
 // ── 모드: 판례(특허 제외) / 특허(특허 공보만). 같은 엔진, 팩만 다름 ──

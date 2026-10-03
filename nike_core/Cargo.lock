@@ -699,7 +699,7 @@ dependencies = [
 
 [[package]]
 name = "nike_core"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "anyhow",
  "memmap2",

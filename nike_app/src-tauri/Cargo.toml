@@ -1,6 +1,6 @@
 [package]
 name = "nike_app"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 description = "NIKH — 판례 유사검색 (오프라인, 생성 0)"
 
